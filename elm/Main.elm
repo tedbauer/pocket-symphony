@@ -14,11 +14,14 @@ main =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions model =
-    Sub.none
+subscriptions _ =
+    receiveUpdate UpdateChord
 
 
-port transmitCommand : String -> Cmd msg
+port transmitMelody : List (List Float) -> Cmd msg
+
+
+port receiveUpdate : (Int -> msg) -> Sub msg
 
 
 type alias Model =
@@ -52,13 +55,72 @@ init _ =
 type Msg
     = SetNote ( Int, Int, NoteDefinition )
     | Play
+    | UpdateChord Int
+
+
+freqencyOfNote : Note -> Float
+freqencyOfNote _ =
+    0.0
+
+
+isNote : NoteDefinition -> Bool
+isNote note =
+    case note of
+        Populated _ ->
+            True
+
+        NotPopulated ->
+            False
+
+
+chordToFrequencies : List NoteDefinition -> List Float
+chordToFrequencies noteDefinitions =
+    List.filter isNote noteDefinitions
+        |> List.map
+            (\note ->
+                case note of
+                    Populated C ->
+                        261.63
+
+                    Populated D ->
+                        293.66
+
+                    Populated E ->
+                        329.63
+
+                    Populated F ->
+                        349.23
+
+                    Populated G ->
+                        392.0
+
+                    Populated A ->
+                        440.0
+
+                    Populated B ->
+                        493.88
+
+                    NotPopulated ->
+                        -1.0
+            )
+
+
+melodyFrequencies : Model -> List (List Float)
+melodyFrequencies model =
+    model.melody
+        |> Array.map Array.toList
+        |> Array.toList
+        |> List.map (\chord -> chordToFrequencies chord)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        UpdateChord chordNumber ->
+            ( { model | activeChord = chordNumber }, Cmd.none )
+
         Play ->
-            ( { model | playing = True }, transmitCommand "play" )
+            ( { model | playing = True }, transmitMelody (melodyFrequencies model) )
 
         SetNote ( rowNumber, columnNumber, noteDefinition ) ->
             case Array.get columnNumber model.melody of
@@ -106,7 +168,30 @@ createNote rowNumber columnNumber model =
                     NotPopulated
 
                   else
-                    Populated F
+                    case rowNumber of
+                        0 ->
+                            Populated A
+
+                        1 ->
+                            Populated B
+
+                        2 ->
+                            Populated C
+
+                        3 ->
+                            Populated D
+
+                        4 ->
+                            Populated E
+
+                        5 ->
+                            Populated F
+
+                        6 ->
+                            Populated G
+
+                        _ ->
+                            Populated A
                 )
             )
         , class "note"

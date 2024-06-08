@@ -14,8 +14,12 @@
     node: document.getElementById('myapp')
   });
 
-  app.ports.transmitCommand.subscribe(function(message) {
-    Audio.handlePortMessage2("yo");
+  const audioPlayer = new Audio.AudioPlayer((currentChord => {
+    app.ports.receiveUpdate.send(currentChord);
+  }));
+
+  app.ports.transmitMelody.subscribe(function(message) {
+    audioPlayer.processCommand(message);
   });
   </script>
 </body>

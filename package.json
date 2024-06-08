@@ -1,5 +1,8 @@
 {
   "devDependencies": {
+    "@types/webpack": "^5.28.5",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.4.5",
     "webpack-cli": "^5.1.4"
   }
 }

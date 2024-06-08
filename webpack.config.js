@@ -1,15 +1,16 @@
 const path = require('path');
 
 module.exports = {
-  entry: './ts/index.js',
+  entry: './ts/index.ts',
   output: {
     library: 'Audio',
   },
   module: {
     rules: [
       {
-        test: /\.js$/,
+        test: /\.ts$/,
         exclude: /node_modules/,
+        use: 'ts-loader'
       },
     ],
   },

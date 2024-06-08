@@ -1,6 +1,6 @@
 .PHONY: clean  # Phony target for cleanup
 
-main.js:
+main.js: elm/Main.elm
 	elm make elm/Main.elm --output=$@
 
 build: main.js
@@ -11,4 +11,5 @@ dev: build
 
 clean:
 	rm -rf dist
+	rm -rf node_modules
 	rm main.js
