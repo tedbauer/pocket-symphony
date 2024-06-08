@@ -1,0 +1,98 @@
+.card {
+    border-style: solid;
+    border-width: 1px;
+    border-radius: 10px;
+    padding: 10px;
+    display: inline-block;
+}
+
+.note {
+    border-style: solid;
+    margin: 5px;
+    padding: 5px;
+    border-width: 1px;
+    border-radius: 2px;
+    width: 15px;
+    transition: transform 0.1s ease-in-out, background-color 0.1s ease-in-out;
+}
+
+.note:hover {
+    transform: scale(1.3);
+    background-color: lightblue;
+    cursor: pointer;
+}
+
+.playbar {
+    border-width: 1px;
+    border-radius: 2px;
+    padding: 3px;
+    margin: 2px;
+}
+
+.activenote {
+    left: 5px;
+    position: relative;
+}
+
+.chord {
+    display: inline-block;
+    border-radius: 2px;
+}
+
+.chord[data-on="true"] {
+    background-color: lightcyan;
+}
+
+.ctrl {
+    margin: 0 auto;
+    width: 10%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.note[data-enabled="true"] {
+    background-color: #6c446e;
+}
+
+.play {
+    cursor: pointer;
+    display: inline;
+    margin: 2px;
+    transition: transform 0.1s ease-in-out, background-color 0.1s ease-in-out;
+    padding: 3px;
+    border-radius: 3px;
+}
+
+.reset {
+    cursor: pointer;
+    display: inline;
+    margin: 2px;
+    transition: transform 0.1s ease-in-out, background-color 0.1s ease-in-out;
+    padding: 3px;
+    border-radius: 3px;
+}
+
+.pause {
+    cursor: pointer;
+    display: inline;
+    padding: 3px;
+    margin: 2px;
+    border-radius: 3px;
+    transition: transform 0.1s ease-in-out, background-color 0.1s ease-in-out;
+}
+
+.play:hover {
+    cursor: pointer;
+    background-color: lightcyan;
+}
+
+.pause:hover {
+    cursor: pointer;
+    background-color: lightcyan;
+}
+
+.reset:hover {
+    background-color: lightcyan;
+    cursor: pointer;
+}
