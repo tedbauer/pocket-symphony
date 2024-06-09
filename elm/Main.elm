@@ -5,7 +5,7 @@ import Browser
 import Debug exposing (toString)
 import Html exposing (Html, button, col, div, text)
 import Html.Attributes exposing (attribute, class)
-import Html.Events exposing (onClick)
+import Html.Events exposing (on, onClick)
 import Platform.Cmd as Cmd
 
 
@@ -15,13 +15,19 @@ main =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    receiveUpdate UpdateChord
+    Sub.batch [ receiveUpdate UpdateChord ]
 
 
 port transmitMelody : List (List Float) -> Cmd msg
 
 
+port onlyTransmitMelody : List (List Float) -> Cmd msg
+
+
 port receiveUpdate : (Int -> msg) -> Sub msg
+
+
+port sendAudioCommand : String -> Cmd msg
 
 
 type alias Model =
@@ -55,6 +61,7 @@ init _ =
 type Msg
     = SetNote ( Int, Int, NoteDefinition )
     | Play
+    | Pause
     | UpdateChord Int
 
 
@@ -119,6 +126,9 @@ update msg model =
         UpdateChord chordNumber ->
             ( { model | activeChord = chordNumber }, Cmd.none )
 
+        Pause ->
+            ( { model | playing = False }, sendAudioCommand "pause" )
+
         Play ->
             ( { model | playing = True }, transmitMelody (melodyFrequencies model) )
 
@@ -133,7 +143,11 @@ update msg model =
                         updatedMelody =
                             Array.set columnNumber updatedChord model.melody
                     in
-                    ( { model | melody = updatedMelody }, Cmd.none )
+                    let
+                        updatedModel =
+                            { model | melody = updatedMelody }
+                    in
+                    ( updatedModel, onlyTransmitMelody (melodyFrequencies updatedModel) )
 
                 Maybe.Nothing ->
                     ( model, Cmd.none )
@@ -170,25 +184,25 @@ createNote rowNumber columnNumber model =
                   else
                     case rowNumber of
                         0 ->
-                            Populated A
+                            Populated G
 
                         1 ->
-                            Populated B
+                            Populated F
 
                         2 ->
-                            Populated C
+                            Populated E
 
                         3 ->
                             Populated D
 
                         4 ->
-                            Populated E
+                            Populated C
 
                         5 ->
-                            Populated F
+                            Populated B
 
                         6 ->
-                            Populated G
+                            Populated A
 
                         _ ->
                             Populated A
@@ -234,7 +248,7 @@ playView : Html Msg
 playView =
     div [ class "ctrl" ]
         [ div [ class "play", onClick Play ] [ text "▶️" ]
-        , div [ class "pause" ] [ text "⏸️" ]
+        , div [ class "pause", onClick Pause ] [ text "⏸️" ]
         , div [ class "reset" ] [ text "⏮️" ]
         ]
 

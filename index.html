@@ -21,6 +21,13 @@
   app.ports.transmitMelody.subscribe(function(message) {
     audioPlayer.processCommand(message);
   });
+
+  app.ports.onlyTransmitMelody.subscribe(function(message) {
+    audioPlayer.setMelody(message);
+  });
+
+  app.ports.sendAudioCommand.subscribe(function(message) {
+    audioPlayer.setPlaying(false);
+  });
   </script>
 </body>
-</html>

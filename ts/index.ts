@@ -1,4 +1,4 @@
-const chordTimeMs = 500;
+const chordTimeMs = 250;
 var currentChord = 0;
 var audioCtx: AudioContext;
 var melody: number[][];
@@ -21,7 +21,7 @@ function invokeInterval() {
       oscillator.connect(gainNode);
 
       oscillator.start(currentChord * chordTimeMs / 1000);
-      oscillator.stop((currentChord * chordTimeMs / 1000) + 1);
+      oscillator.stop((currentChord * chordTimeMs / 1000) + 0.2);
     })
 
     viewUpdateCallback(currentChord % 8);
@@ -38,6 +38,7 @@ export class AudioPlayer {
   constructor(viewUpdateCallback2: Function) {
     this.viewUpdateCallback = viewUpdateCallback;
     this.melody = [];
+
     viewUpdateCallback = viewUpdateCallback2;
   }
 
@@ -46,5 +47,13 @@ export class AudioPlayer {
     melody = command;
 
     invokeInterval();
+  }
+
+  public setMelody(command: number[][]) {
+    console.log(command);
+    melody = command;
+  }
+
+  public setPlaying(playing: boolean) {
   }
 }
