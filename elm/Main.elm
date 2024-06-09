@@ -15,16 +15,13 @@ main =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.batch [ receiveUpdate UpdateChord ]
+    Sub.batch [ receiveCurrentChordUpdate UpdateChord ]
 
 
 port transmitMelody : List (List Float) -> Cmd msg
 
 
-port onlyTransmitMelody : List (List Float) -> Cmd msg
-
-
-port receiveUpdate : (Int -> msg) -> Sub msg
+port receiveCurrentChordUpdate : (Int -> msg) -> Sub msg
 
 
 port sendAudioCommand : String -> Cmd msg
@@ -130,7 +127,7 @@ update msg model =
             ( { model | playing = False }, sendAudioCommand "pause" )
 
         Play ->
-            ( { model | playing = True }, transmitMelody (melodyFrequencies model) )
+            ( { model | playing = True }, sendAudioCommand "play" )
 
         SetNote ( rowNumber, columnNumber, noteDefinition ) ->
             case Array.get columnNumber model.melody of
@@ -147,7 +144,7 @@ update msg model =
                         updatedModel =
                             { model | melody = updatedMelody }
                     in
-                    ( updatedModel, onlyTransmitMelody (melodyFrequencies updatedModel) )
+                    ( updatedModel, transmitMelody (melodyFrequencies updatedModel) )
 
                 Maybe.Nothing ->
                     ( model, Cmd.none )

@@ -15,19 +15,15 @@
   });
 
   const audioPlayer = new Audio.AudioPlayer((currentChord => {
-    app.ports.receiveUpdate.send(currentChord);
+    app.ports.receiveCurrentChordUpdate.send(currentChord);
   }));
 
-  app.ports.transmitMelody.subscribe(function(message) {
-    audioPlayer.processCommand(message);
+  app.ports.transmitMelody.subscribe(function(melody) {
+    audioPlayer.updateMelody(melody);
   });
 
-  app.ports.onlyTransmitMelody.subscribe(function(message) {
-    audioPlayer.setMelody(message);
-  });
-
-  app.ports.sendAudioCommand.subscribe(function(message) {
-    audioPlayer.setPlaying(false);
+  app.ports.sendAudioCommand.subscribe(function(audioCommand) {
+    audioPlayer.processAudioCommand(audioCommand)
   });
   </script>
 </body>
