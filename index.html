@@ -22,6 +22,10 @@
     audioPlayer.updateMelody(melody);
   });
 
+  app.ports.transmitBpm.subscribe(function(bpm) {
+    audioPlayer.updateBpm(bpm);
+  });
+
   app.ports.sendAudioCommand.subscribe(function(audioCommand) {
     audioPlayer.processAudioCommand(audioCommand)
   });

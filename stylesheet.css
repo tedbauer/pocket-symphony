@@ -96,3 +96,9 @@
     background-color: lightcyan;
     cursor: pointer;
 }
+
+.bpm {
+    width: 30px;
+    margin: 3px;
+    border: none;
+}

@@ -1,10 +1,9 @@
-const CHORD_TIME_MS = 250;
-
 export class AudioPlayer {
   private viewUpdateCallback: Function;
   private audioCtx: AudioContext;
 
   private melody: number[][];
+  private bpm: number;
   private currentChord;
   private playing: boolean;
 
@@ -12,20 +11,21 @@ export class AudioPlayer {
 
   constructor(viewUpdateCallback: Function) {
     this.viewUpdateCallback = viewUpdateCallback;
-    this.audioCtx = new AudioContext();
 
     this.melody = [];
     this.currentChord = 0;
     this.playing = false;
+    this.bpm = 500;
 
     this.intervalIds = [];
+    this.audioCtx = new AudioContext();
   }
 
   private invokeInterval() {
     const lookahead = 75;
     const interval = 50;
 
-    while (this.playing && this.currentChord * CHORD_TIME_MS < (this.audioCtx.currentTime * 1000) + lookahead) {
+    while (this.playing && this.currentChord * this.bpm < (this.audioCtx.currentTime * 1000) + lookahead) {
       let chord: number[] = this.melody[this.currentChord % 8];
       chord.forEach((frequency) => {
         const gainNode = this.audioCtx.createGain();
@@ -37,8 +37,8 @@ export class AudioPlayer {
         oscillator.frequency.setValueAtTime(frequency, this.audioCtx.currentTime);
         oscillator.connect(gainNode);
 
-        oscillator.start(this.currentChord * CHORD_TIME_MS / 1000);
-        oscillator.stop((this.currentChord * CHORD_TIME_MS / 1000) + 0.2);
+        oscillator.start(this.currentChord * this.bpm / 1000);
+        oscillator.stop((this.currentChord * this.bpm / 1000) + 0.2);
       })
 
       this.viewUpdateCallback(this.currentChord % 8);
@@ -58,17 +58,26 @@ export class AudioPlayer {
 
   public processAudioCommand(audioCommand: string) {
     if (audioCommand === "play") {
-      console.log(this.currentChord % 8);
       this.playing = true;
       this.invokeInterval();
     } else if (audioCommand === "pause") {
-      console.log(this.currentChord % 8);
       this.playing = false;
       this.clearIntervals();
+    } else if (audioCommand === "reset") {
+      this.playing = false;
+      this.clearIntervals();
+      this.currentChord = 0;
+
+      this.audioCtx.close();
+      this.audioCtx = new AudioContext();
     }
   }
 
   public updateMelody(melody: number[][]) {
     this.melody = melody;
+  }
+
+  public updateBpm(bpm: number) {
+    this.bpm = bpm;
   }
 }

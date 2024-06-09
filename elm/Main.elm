@@ -3,10 +3,11 @@ port module Main exposing (..)
 import Array exposing (Array)
 import Browser
 import Debug exposing (toString)
-import Html exposing (Html, button, col, div, text)
-import Html.Attributes exposing (attribute, class)
-import Html.Events exposing (on, onClick)
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (on, onClick, onInput)
 import Platform.Cmd as Cmd
+import String exposing (toInt)
 
 
 main =
@@ -21,6 +22,9 @@ subscriptions _ =
 port transmitMelody : List (List Float) -> Cmd msg
 
 
+port transmitBpm : Int -> Cmd msg
+
+
 port receiveCurrentChordUpdate : (Int -> msg) -> Sub msg
 
 
@@ -28,7 +32,7 @@ port sendAudioCommand : String -> Cmd msg
 
 
 type alias Model =
-    { melody : Array Chord, activeChord : Int, playing : Bool }
+    { melody : Array Chord, activeChord : Int, playing : Bool, bpm : Int }
 
 
 type NoteDefinition
@@ -52,13 +56,15 @@ type alias Chord =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { melody = Array.repeat 8 (Array.repeat 8 NotPopulated), activeChord = 0, playing = False }, Cmd.none )
+    ( { melody = Array.repeat 8 (Array.repeat 8 NotPopulated), activeChord = 0, playing = False, bpm = 500 }, Cmd.none )
 
 
 type Msg
     = SetNote ( Int, Int, NoteDefinition )
     | Play
     | Pause
+    | Reset
+    | UpdateBpm Int
     | UpdateChord Int
 
 
@@ -128,6 +134,12 @@ update msg model =
 
         Play ->
             ( { model | playing = True }, sendAudioCommand "play" )
+
+        Reset ->
+            ( { model | playing = False, activeChord = 0 }, sendAudioCommand "reset" )
+
+        UpdateBpm bpm ->
+            ( { model | bpm = bpm }, transmitBpm bpm )
 
         SetNote ( rowNumber, columnNumber, noteDefinition ) ->
             case Array.get columnNumber model.melody of
@@ -241,19 +253,40 @@ chordView columnNumber model =
         (createChord 0 8 columnNumber model)
 
 
-playView : Html Msg
-playView =
+playView : Model -> Html Msg
+playView model =
     div [ class "ctrl" ]
         [ div [ class "play", onClick Play ] [ text "▶️" ]
         , div [ class "pause", onClick Pause ] [ text "⏸️" ]
-        , div [ class "reset" ] [ text "⏮️" ]
+        , div [ class "reset", onClick Reset ] [ text "⏮️" ]
+        , input
+            [ class "bpm"
+            , type_ "text"
+            , placeholder (toString model.bpm)
+            , value (toString model.bpm)
+            , onInput
+                (\bpm ->
+                    case toInt bpm of
+                        Maybe.Just v ->
+                            UpdateBpm v
+
+                        Maybe.Nothing ->
+                            UpdateBpm model.bpm
+                )
+            ]
+            []
         ]
+
+
+determineActiveX : Model -> String
+determineActiveX model =
+    toString (5 + model.activeChord * 37) ++ "px"
 
 
 view : Model -> Html Msg
 view model =
     div [ class "card" ]
-        [ div [ class "playbar" ] [ div [ class "activenote" ] [ text "⬇️" ] ]
+        [ div [ class "playbar" ] [ div [ class "activenote", style "left" (determineActiveX model) ] [ text "⬇️" ] ]
         , chordView 0 model
         , chordView 1 model
         , chordView 2 model
@@ -262,5 +295,5 @@ view model =
         , chordView 5 model
         , chordView 6 model
         , chordView 7 model
-        , playView
+        , playView model
         ]
