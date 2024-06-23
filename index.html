@@ -26,6 +26,12 @@
       audioPlayer.updateMelody(melody);
     });
 
+    app.ports.toggleDrumPatternAt.subscribe(function (drumTypeAndColumn) {
+      let drumType = drumTypeAndColumn[0];
+      let columnNumber = drumTypeAndColumn[1];
+      audioPlayer.toggleDrumPatternAt(drumType, columnNumber);
+    });
+
     app.ports.transmitBpm.subscribe(function (bpm) {
       audioPlayer.updateBpm(bpm);
     });

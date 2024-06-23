@@ -24,6 +24,9 @@ subscriptions _ =
 port transmitMelody : List (List Float) -> Cmd msg
 
 
+port toggleDrumPatternAt : ( String, Int ) -> Cmd msg
+
+
 port transmitBpm : Int -> Cmd msg
 
 
@@ -250,7 +253,18 @@ update msg model =
                         updatedModel =
                             { model | drumMachine = updatedDrumMachine }
                     in
-                    ( updatedModel, transmitMelody (melodyFrequencies updatedModel) )
+                    let
+                        drumType =
+                            if rowNumber == 0 then
+                                "kick"
+
+                            else if rowNumber == 1 then
+                                "snare"
+
+                            else
+                                "hihat"
+                    in
+                    ( updatedModel, toggleDrumPatternAt ( drumType, columnNumber ) )
 
                 Maybe.Nothing ->
                     ( model, Cmd.none )
@@ -464,7 +478,8 @@ patternCol model columnNumber =
             )
         ]
         [ div
-            [ class "drumcell",onClick (UpdateDrumCell ( columnNumber, 0, CellEnabled ))
+            [ class "drumcell"
+            , onClick (UpdateDrumCell ( columnNumber, 0, CellEnabled ))
             , attribute "data-enabled"
                 (if isDrumCellPopulated model columnNumber 0 then
                     "true"
@@ -475,7 +490,8 @@ patternCol model columnNumber =
             ]
             []
         , div
-            [ class "drumcell",onClick (UpdateDrumCell ( columnNumber, 1, CellEnabled ))
+            [ class "drumcell"
+            , onClick (UpdateDrumCell ( columnNumber, 1, CellEnabled ))
             , attribute "data-enabled"
                 (if isDrumCellPopulated model columnNumber 1 then
                     "true"
@@ -486,7 +502,8 @@ patternCol model columnNumber =
             ]
             []
         , div
-            [ class "drumcell",onClick (UpdateDrumCell ( columnNumber, 2, CellEnabled ))
+            [ class "drumcell"
+            , onClick (UpdateDrumCell ( columnNumber, 2, CellEnabled ))
             , attribute "data-enabled"
                 (if isDrumCellPopulated model columnNumber 2 then
                     "true"
