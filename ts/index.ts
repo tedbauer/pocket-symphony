@@ -9,6 +9,8 @@ export class AudioPlayer {
 
   private intervalIds: any[];
 
+  private wave: any = "sine";
+
   constructor(viewUpdateCallback: Function) {
     this.viewUpdateCallback = viewUpdateCallback;
 
@@ -33,7 +35,7 @@ export class AudioPlayer {
         gainNode.connect(this.audioCtx.destination);
 
         const oscillator = this.audioCtx.createOscillator();
-        oscillator.type = "sine";
+        oscillator.type = this.wave;
         oscillator.frequency.setValueAtTime(frequency, this.audioCtx.currentTime);
         oscillator.connect(gainNode);
 
@@ -75,6 +77,10 @@ export class AudioPlayer {
 
   public updateMelody(melody: number[][]) {
     this.melody = melody;
+  }
+
+  public updateWave(wave: string) {
+    this.wave = wave.toLowerCase();
   }
 
   public updateBpm(bpm: number) {

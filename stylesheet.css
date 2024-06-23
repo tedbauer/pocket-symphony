@@ -1,9 +1,19 @@
+.cardholder {
+    margin: 5px;
+    display: flex;
+    justify-content: flex-start
+
+}
+
 .card {
+    height: 220px;
+    margin: 10px;
     border-style: solid;
     border-width: 1px;
     border-radius: 10px;
     padding: 10px;
-    display: inline-block;
+    display: block;
+    font-family: 'Merriweather', serif;
 }
 
 .note {
@@ -101,4 +111,85 @@
     width: 30px;
     margin: 3px;
     border: none;
+}
+
+.oscctrl {
+    font-size: 80%;
+    position: relative;
+    top: 10px;
+    display: inline-block;
+}
+
+.prevwave {
+    cursor: pointer;
+    display: inline;
+    margin: 2px;
+    border-radius: 3px;
+    transition: transform 0.1s ease-in-out, background-color 0.1s ease-in-out;
+}
+
+.nextwave {
+    cursor: pointer;
+    display: inline;
+    padding: 3px;
+    margin: 2px;
+    border-radius: 3px;
+    transition: transform 0.1s ease-in-out, background-color 0.1s ease-in-out;
+}
+
+.prevwave:hover {
+    cursor: pointer;
+    background-color: lightcyan;
+}
+
+.nextwave:hover {
+    cursor: pointer;
+    background-color: lightcyan;
+}
+
+.drumgrid {
+    display: flex;;
+}
+
+.drumcol{
+}
+
+.drumcol[data-on="true"] {
+    background-color: lightcyan;
+}
+
+
+.drumcell {
+    border-style: solid;
+    border-width: 0.5px;
+    width: 20px;
+    height: 20px;
+}
+
+.drumcell[data-enabled="true"] {
+    background-color: #6c446e;
+
+}
+
+.drumcell:hover {
+    background-color: lightpink;
+}
+
+
+.drummachine {
+    display: flex;
+    padding-top: 10px;
+    padding-right: 10px;
+
+}
+
+.drumlabels {
+    display: block;
+    font-size: 10px;
+    padding-right: 5px
+}
+
+.drumlabel {
+    margin: 7px;
+
 }

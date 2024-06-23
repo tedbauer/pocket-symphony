@@ -1,33 +1,41 @@
 <html>
+
 <head>
   <meta charset="UTF-8">
   <title>Main</title>
   <script src="main.js"></script>
   <link rel="stylesheet" type="text/css" href="stylesheet.css">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&display=swap"
+    rel="stylesheet">
 </head>
 
 <body>
   <div id="myapp"></div>
   <script src="dist/main.js"></script>
   <script>
-  var app = Elm.Main.init({
-    node: document.getElementById('myapp')
-  });
+    var app = Elm.Main.init({
+      node: document.getElementById('myapp')
+    });
 
-  const audioPlayer = new Audio.AudioPlayer((currentChord => {
-    app.ports.receiveCurrentChordUpdate.send(currentChord);
-  }));
+    const audioPlayer = new Audio.AudioPlayer((currentChord => {
+      app.ports.receiveCurrentChordUpdate.send(currentChord);
+    }));
 
-  app.ports.transmitMelody.subscribe(function(melody) {
-    audioPlayer.updateMelody(melody);
-  });
+    app.ports.transmitMelody.subscribe(function (melody) {
+      audioPlayer.updateMelody(melody);
+    });
 
-  app.ports.transmitBpm.subscribe(function(bpm) {
-    audioPlayer.updateBpm(bpm);
-  });
+    app.ports.transmitBpm.subscribe(function (bpm) {
+      audioPlayer.updateBpm(bpm);
+    });
 
-  app.ports.sendAudioCommand.subscribe(function(audioCommand) {
-    audioPlayer.processAudioCommand(audioCommand)
-  });
+    app.ports.transmitWave.subscribe(function (wave) {
+      audioPlayer.updateWave(wave);
+    });
+
+    app.ports.sendAudioCommand.subscribe(function (audioCommand) {
+      audioPlayer.processAudioCommand(audioCommand)
+    });
   </script>
 </body>
