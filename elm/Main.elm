@@ -124,6 +124,16 @@ type DrumCellState
     | CellDisabled
 
 
+flipCellState : DrumCellState -> DrumCellState
+flipCellState state =
+    case state of
+        CellEnabled ->
+            CellDisabled
+
+        CellDisabled ->
+            CellEnabled
+
+
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( { melody = Array.repeat 8 (Array.repeat 8 NotPopulated)
@@ -150,7 +160,7 @@ type Msg
     | UpdateBpm Int
     | UpdateChord Int
     | UpdateOscillator OscillatorUpdate
-    | UpdateDrumCell ( Int, Int, DrumCellState )
+    | ToggleDrumCell ( Int, Int )
 
 
 freqencyOfNote : Note -> Float
@@ -208,34 +218,15 @@ melodyFrequencies model =
         |> List.map (\chord -> chordToFrequencies chord)
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    case msg of
-        UpdateChord chordNumber ->
-            let
-                drumMachine =
-                    model.drumMachine
-            in
-            ( { model | activeChord = chordNumber, drumMachine = { drumMachine | activeCol = chordNumber } }, Cmd.none )
-
-        Pause ->
-            ( { model | playing = False }, sendAudioCommand "pause" )
-
-        Play ->
-            ( { model | playing = True }, sendAudioCommand "play" )
-
-        Reset ->
-            ( { model | playing = False, activeChord = 0 }, sendAudioCommand "reset" )
-
-        UpdateBpm bpm ->
-            ( { model | bpm = bpm }, transmitBpm bpm )
-
-        UpdateDrumCell ( columnNumber, rowNumber, newState ) ->
-            case Array.get columnNumber model.drumMachine.cells of
-                Maybe.Just column ->
+toggleDrumCellState : Model -> Int -> Int -> ( Model, Cmd Msg )
+toggleDrumCellState model columnNumber rowNumber =
+    case Array.get columnNumber model.drumMachine.cells of
+        Maybe.Just column ->
+            case Array.get rowNumber column of
+                Maybe.Just prevCellState ->
                     let
                         updatedColumn =
-                            Array.set rowNumber CellEnabled column
+                            Array.set rowNumber (flipCellState prevCellState) column
                     in
                     let
                         updatedCells =
@@ -268,6 +259,35 @@ update msg model =
 
                 Maybe.Nothing ->
                     ( model, Cmd.none )
+
+        Maybe.Nothing ->
+            ( model, Cmd.none )
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        UpdateChord chordNumber ->
+            let
+                drumMachine =
+                    model.drumMachine
+            in
+            ( { model | activeChord = chordNumber, drumMachine = { drumMachine | activeCol = chordNumber } }, Cmd.none )
+
+        Pause ->
+            ( { model | playing = False }, sendAudioCommand "pause" )
+
+        Play ->
+            ( { model | playing = True }, sendAudioCommand "play" )
+
+        Reset ->
+            ( { model | playing = False, activeChord = 0 }, sendAudioCommand "reset" )
+
+        UpdateBpm bpm ->
+            ( { model | bpm = bpm }, transmitBpm bpm )
+
+        ToggleDrumCell ( columnNumber, rowNumber ) ->
+            toggleDrumCellState model columnNumber rowNumber
 
         SetNote ( rowNumber, columnNumber, noteDefinition ) ->
             case Array.get columnNumber model.melody of
@@ -479,7 +499,7 @@ patternCol model columnNumber =
         ]
         [ div
             [ class "drumcell"
-            , onClick (UpdateDrumCell ( columnNumber, 0, CellEnabled ))
+            , onClick (ToggleDrumCell ( columnNumber, 0 ))
             , attribute "data-enabled"
                 (if isDrumCellPopulated model columnNumber 0 then
                     "true"
@@ -491,7 +511,7 @@ patternCol model columnNumber =
             []
         , div
             [ class "drumcell"
-            , onClick (UpdateDrumCell ( columnNumber, 1, CellEnabled ))
+            , onClick (ToggleDrumCell ( columnNumber, 1 ))
             , attribute "data-enabled"
                 (if isDrumCellPopulated model columnNumber 1 then
                     "true"
@@ -503,7 +523,7 @@ patternCol model columnNumber =
             []
         , div
             [ class "drumcell"
-            , onClick (UpdateDrumCell ( columnNumber, 2, CellEnabled ))
+            , onClick (ToggleDrumCell ( columnNumber, 2 ))
             , attribute "data-enabled"
                 (if isDrumCellPopulated model columnNumber 2 then
                     "true"
