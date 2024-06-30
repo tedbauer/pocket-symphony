@@ -1,6 +1,6 @@
 export class AudioPlayer {
   private viewUpdateCallback: Function;
-  private audioCtx: AudioContext;
+  private audioCtx?: AudioContext;
 
   private melody: number[][];
   private bpm: number;
@@ -16,7 +16,7 @@ export class AudioPlayer {
   constructor(viewUpdateCallback: Function) {
     this.viewUpdateCallback = viewUpdateCallback;
 
-    this.melody = [];
+    this.melody = [[],[],[],[],[],[],[],[]];
     this.currentChord = 0;
     this.playing = false;
     this.bpm = 200;
@@ -28,64 +28,64 @@ export class AudioPlayer {
     ]);
 
     this.intervalIds = [];
-    this.audioCtx = new AudioContext();
+    this.audioCtx!;
   }
 
   private playKick() {
-    const kickGain = this.audioCtx.createGain();
-    kickGain.gain.setValueAtTime(1, this.audioCtx.currentTime);
-    kickGain.connect(this.audioCtx.destination);
-    kickGain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.5);
+    const kickGain = this.audioCtx!.createGain();
+    kickGain.gain.setValueAtTime(1, this.audioCtx!.currentTime);
+    kickGain.connect(this.audioCtx!.destination);
+    kickGain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx!.currentTime + 0.5);
 
-    const oscillator = this.audioCtx.createOscillator();
+    const oscillator = this.audioCtx!.createOscillator();
     oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(150, this.audioCtx.currentTime);
+    oscillator.frequency.setValueAtTime(150, this.audioCtx!.currentTime);
     oscillator.connect(kickGain)
-    oscillator.frequency.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.5);
+    oscillator.frequency.exponentialRampToValueAtTime(0.01, this.audioCtx!.currentTime + 0.5);
 
     oscillator.start(this.currentChord * this.bpm / 1000);
     oscillator.stop((this.currentChord * this.bpm / 1000) + 0.2);
   }
 
   private playSnare() {
-    const bufferSize = this.audioCtx.sampleRate * 0.2;
-    const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
+    const bufferSize = this.audioCtx!.sampleRate * 0.2;
+    const buffer = this.audioCtx!.createBuffer(1, bufferSize, this.audioCtx!.sampleRate);
     const output = buffer.getChannelData(0);
 
     for (let i = 0; i < bufferSize; i++) {
         output[i] = Math.random() * 2 - 1;
     }
 
-    const source = this.audioCtx.createBufferSource();
+    const source = this.audioCtx!.createBufferSource();
     source.buffer = buffer;
 
-    const snareGain = this.audioCtx.createGain();
-    snareGain.gain.setValueAtTime(1, this.audioCtx.currentTime);
-    snareGain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.2);
+    const snareGain = this.audioCtx!.createGain();
+    snareGain.gain.setValueAtTime(1, this.audioCtx!.currentTime);
+    snareGain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx!.currentTime + 0.2);
 
     source.connect(snareGain);
-    snareGain.connect(this.audioCtx.destination);
+    snareGain.connect(this.audioCtx!.destination);
     source.start(this.currentChord * this.bpm / 1000);
   }
 
   private playHihat() {
-    const bufferSize = this.audioCtx.sampleRate * 0.1;
-    const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
+    const bufferSize = this.audioCtx!.sampleRate * 0.1;
+    const buffer = this.audioCtx!.createBuffer(1, bufferSize, this.audioCtx!.sampleRate);
     const output = buffer.getChannelData(0);
 
     for (let i = 0; i < bufferSize; i++) {
         output[i] = Math.random() * 2 - 1;
     }
 
-    const source = this.audioCtx.createBufferSource();
+    const source = this.audioCtx!.createBufferSource();
     source.buffer = buffer;
 
-    const hihatGain = this.audioCtx.createGain();
-    hihatGain.gain.setValueAtTime(1, this.audioCtx.currentTime);
-    hihatGain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.1);
+    const hihatGain = this.audioCtx!.createGain();
+    hihatGain.gain.setValueAtTime(1, this.audioCtx!.currentTime);
+    hihatGain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx!.currentTime + 0.1);
 
     source.connect(hihatGain);
-    hihatGain.connect(this.audioCtx.destination);
+    hihatGain.connect(this.audioCtx!.destination);
     source.start(this.currentChord * this.bpm / 1000);
   }
 
@@ -93,16 +93,16 @@ export class AudioPlayer {
     const lookahead = 75;
     const interval = 50;
 
-    while (this.playing && this.currentChord * this.bpm < (this.audioCtx.currentTime * 1000) + lookahead) {
+    while (this.playing && this.currentChord * this.bpm < (this.audioCtx!.currentTime * 1000) + lookahead) {
       let chord: number[] = this.melody[this.currentChord % 8];
       chord.forEach((frequency) => {
-        const gainNode = this.audioCtx.createGain();
-        gainNode.gain.setValueAtTime(0.8, this.audioCtx.currentTime);
-        gainNode.connect(this.audioCtx.destination);
+        const gainNode = this.audioCtx!.createGain();
+        gainNode.gain.setValueAtTime(0.8, this.audioCtx!.currentTime);
+        gainNode.connect(this.audioCtx!.destination);
 
-        const oscillator = this.audioCtx.createOscillator();
+        const oscillator = this.audioCtx!.createOscillator();
         oscillator.type = this.wave;
-        oscillator.frequency.setValueAtTime(frequency, this.audioCtx.currentTime);
+        oscillator.frequency.setValueAtTime(frequency, this.audioCtx!.currentTime);
         oscillator.connect(gainNode);
 
         oscillator.start(this.currentChord * this.bpm / 1000);
@@ -138,6 +138,10 @@ export class AudioPlayer {
 
   public processAudioCommand(audioCommand: string) {
     if (audioCommand === "play") {
+      if (this.audioCtx === undefined) {
+        this.audioCtx = new AudioContext();
+      }
+
       this.playing = true;
       this.invokeInterval();
     } else if (audioCommand === "pause") {
@@ -148,8 +152,8 @@ export class AudioPlayer {
       this.clearIntervals();
       this.currentChord = 0;
 
-      this.audioCtx.close();
-      this.audioCtx = new AudioContext();
+      this.audioCtx!.close();
+      this.audioCtx! = new AudioContext();
     }
   }
 
