@@ -19,7 +19,7 @@ export class AudioPlayer {
     this.melody = [];
     this.currentChord = 0;
     this.playing = false;
-    this.bpm = 500;
+    this.bpm = 200;
 
     this.drumPatterns = new Map([
       ["kick", Array(16).fill(false)],
@@ -109,19 +109,19 @@ export class AudioPlayer {
         oscillator.stop((this.currentChord * this.bpm / 1000) + 0.2);
       })
 
-      if (this.drumPatterns.get("kick")![this.currentChord % 8]) {
+      if (this.drumPatterns.get("kick")![this.currentChord % 16]) {
         this.playKick();
       }
 
-      if (this.drumPatterns.get("snare")![this.currentChord % 8]) {
+      if (this.drumPatterns.get("snare")![this.currentChord % 16]) {
         this.playSnare();
       }
 
-      if (this.drumPatterns.get("hihat")![this.currentChord % 8]) {
+      if (this.drumPatterns.get("hihat")![this.currentChord % 16]) {
         this.playHihat();
       }
 
-      this.viewUpdateCallback(this.currentChord % 8);
+      this.viewUpdateCallback(this.currentChord);
       this.currentChord += 1;
     }
 

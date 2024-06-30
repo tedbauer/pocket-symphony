@@ -139,7 +139,7 @@ init _ =
     ( { melody = Array.repeat 8 (Array.repeat 8 NotPopulated)
       , activeChord = 0
       , playing = False
-      , bpm = 500
+      , bpm = 200
       , oscillator = { wave = Sine }
       , drumMachine = { activeCol = 0, cells = Array.repeat 16 (Array.repeat 3 CellDisabled) }
       }
@@ -272,7 +272,7 @@ update msg model =
                 drumMachine =
                     model.drumMachine
             in
-            ( { model | activeChord = chordNumber, drumMachine = { drumMachine | activeCol = chordNumber } }, Cmd.none )
+            ( { model | activeChord = (modBy 8 chordNumber), drumMachine = { drumMachine | activeCol = (modBy 16 chordNumber) } }, Cmd.none )
 
         Pause ->
             ( { model | playing = False }, sendAudioCommand "pause" )
