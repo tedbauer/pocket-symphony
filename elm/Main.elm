@@ -333,19 +333,23 @@ update msg model =
         ProcessKeyboardEvent keyboardEvent ->
             processKeyboardEvent keyboardEvent model
 
-processKeyboardEvent : KeyboardEvent -> Model -> (Model, Cmd Msg)
+
+processKeyboardEvent : KeyboardEvent -> Model -> ( Model, Cmd Msg )
 processKeyboardEvent event model =
     case event.key of
         Maybe.Just k ->
             if k == " " then
                 if model.playing then
-                    ({ model | playing = False }, sendAudioCommand "pause")
+                    ( { model | playing = False }, sendAudioCommand "pause" )
 
                 else
-                    ({model | playing = True }, sendAudioCommand "play")
+                    ( { model | playing = True }, sendAudioCommand "play" )
+
             else
-                (model, Cmd.none)
-        Maybe.Nothing -> (model, Cmd.none)
+                ( model, Cmd.none )
+
+        Maybe.Nothing ->
+            ( model, Cmd.none )
 
 
 isNotePopulated : Model -> Int -> Int -> Bool
