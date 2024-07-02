@@ -2,10 +2,13 @@ port module Main exposing (..)
 
 import Array exposing (Array)
 import Browser
+import Browser.Events exposing (onKeyDown)
 import Debug exposing (toString)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (on, onClick, onInput)
+import Json.Decode exposing (Decoder)
+import Keyboard.Event exposing (KeyboardEvent, decodeKeyboardEvent)
 import Platform.Cmd as Cmd
 import String exposing (toInt)
 import WebAudio exposing (oscillator)
@@ -18,7 +21,10 @@ main =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.batch [ receiveCurrentChordUpdate UpdateChord ]
+    Sub.batch
+        [ receiveCurrentChordUpdate UpdateChord
+        , onKeyDown (Json.Decode.map ProcessKeyboardEvent decodeKeyboardEvent)
+        ]
 
 
 port transmitMelody : List (List Float) -> Cmd msg
@@ -161,6 +167,7 @@ type Msg
     | UpdateChord Int
     | UpdateOscillator OscillatorUpdate
     | ToggleDrumCell ( Int, Int )
+    | ProcessKeyboardEvent KeyboardEvent
 
 
 freqencyOfNote : Note -> Float
@@ -272,7 +279,7 @@ update msg model =
                 drumMachine =
                     model.drumMachine
             in
-            ( { model | activeChord = (modBy 8 chordNumber), drumMachine = { drumMachine | activeCol = (modBy 16 chordNumber) } }, Cmd.none )
+            ( { model | activeChord = modBy 8 chordNumber, drumMachine = { drumMachine | activeCol = modBy 16 chordNumber } }, Cmd.none )
 
         Pause ->
             ( { model | playing = False }, sendAudioCommand "pause" )
@@ -322,6 +329,23 @@ update msg model =
                     model.oscillator
             in
             ( { model | oscillator = { oscillator | wave = prevWave oscillator.wave } }, transmitWave (stringOfWave (prevWave oscillator.wave)) )
+
+        ProcessKeyboardEvent keyboardEvent ->
+            processKeyboardEvent keyboardEvent model
+
+processKeyboardEvent : KeyboardEvent -> Model -> (Model, Cmd Msg)
+processKeyboardEvent event model =
+    case event.key of
+        Maybe.Just k ->
+            if k == " " then
+                if model.playing then
+                    ({ model | playing = False }, sendAudioCommand "pause")
+
+                else
+                    ({model | playing = True }, sendAudioCommand "play")
+            else
+                (model, Cmd.none)
+        Maybe.Nothing -> (model, Cmd.none)
 
 
 isNotePopulated : Model -> Int -> Int -> Bool
