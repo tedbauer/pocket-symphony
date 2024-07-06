@@ -1,19 +1,21 @@
 port module Main exposing (..)
 
+import DrumMachine
 import Array exposing (Array)
 import Browser
 import Browser.Events exposing (onKeyDown)
 import Debug exposing (toString)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (on, onClick, onInput)
-import Json.Decode exposing (Decoder)
+import Html.Events exposing (onClick, onInput)
+import Json.Decode
 import Keyboard.Event exposing (KeyboardEvent, decodeKeyboardEvent)
 import Platform.Cmd as Cmd
 import String exposing (toInt)
 import WebAudio exposing (oscillator)
-import WebAudio.Property exposing (bool)
 
+type alias Model =
+    { melody : Array Chord, activeChord : Int, playing : Bool, bpm : Int, oscillator : Oscillator, drumMachineModel : DrumMachine.Model }
 
 main =
     Browser.element { init = init, subscriptions = subscriptions, update = update, view = view }
@@ -25,7 +27,6 @@ subscriptions _ =
         [ receiveCurrentChordUpdate UpdateChord
         , onKeyDown (Json.Decode.map ProcessKeyboardEvent decodeKeyboardEvent)
         ]
-
 
 port transmitMelody : List (List Float) -> Cmd msg
 
@@ -93,19 +94,6 @@ type Wave
 type alias Oscillator =
     { wave : Wave }
 
-
-type alias DrumColumn =
-    Array DrumCellState
-
-
-type alias DrumMachine =
-    { activeCol : Int, cells : Array DrumColumn }
-
-
-type alias Model =
-    { melody : Array Chord, activeChord : Int, playing : Bool, bpm : Int, oscillator : Oscillator, drumMachine : DrumMachine }
-
-
 type NoteDefinition
     = NotPopulated
     | Populated Note
@@ -124,22 +112,6 @@ type Note
 type alias Chord =
     Array NoteDefinition
 
-
-type DrumCellState
-    = CellEnabled
-    | CellDisabled
-
-
-flipCellState : DrumCellState -> DrumCellState
-flipCellState state =
-    case state of
-        CellEnabled ->
-            CellDisabled
-
-        CellDisabled ->
-            CellEnabled
-
-
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( { melody = Array.repeat 8 (Array.repeat 8 NotPopulated)
@@ -147,7 +119,7 @@ init _ =
       , playing = False
       , bpm = 200
       , oscillator = { wave = Sine }
-      , drumMachine = { activeCol = 0, cells = Array.repeat 16 (Array.repeat 3 CellDisabled) }
+      , drumMachineModel = DrumMachine.initDrumMachineModel
       }
     , Cmd.none
     )
@@ -224,62 +196,15 @@ melodyFrequencies model =
         |> Array.toList
         |> List.map (\chord -> chordToFrequencies chord)
 
-
-toggleDrumCellState : Model -> Int -> Int -> ( Model, Cmd Msg )
-toggleDrumCellState model columnNumber rowNumber =
-    case Array.get columnNumber model.drumMachine.cells of
-        Maybe.Just column ->
-            case Array.get rowNumber column of
-                Maybe.Just prevCellState ->
-                    let
-                        updatedColumn =
-                            Array.set rowNumber (flipCellState prevCellState) column
-                    in
-                    let
-                        updatedCells =
-                            Array.set columnNumber updatedColumn model.drumMachine.cells
-                    in
-                    let
-                        previousDrumMachine =
-                            model.drumMachine
-                    in
-                    let
-                        updatedDrumMachine =
-                            { previousDrumMachine | cells = updatedCells }
-                    in
-                    let
-                        updatedModel =
-                            { model | drumMachine = updatedDrumMachine }
-                    in
-                    let
-                        drumType =
-                            if rowNumber == 0 then
-                                "kick"
-
-                            else if rowNumber == 1 then
-                                "snare"
-
-                            else
-                                "hihat"
-                    in
-                    ( updatedModel, toggleDrumPatternAt ( drumType, columnNumber ) )
-
-                Maybe.Nothing ->
-                    ( model, Cmd.none )
-
-        Maybe.Nothing ->
-            ( model, Cmd.none )
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         UpdateChord chordNumber ->
             let
-                drumMachine =
-                    model.drumMachine
+                updatedDrumMachine =
+                    DrumMachine.updateActiveCol (modBy 16 chordNumber) model.drumMachineModel
             in
-            ( { model | activeChord = modBy 8 chordNumber, drumMachine = { drumMachine | activeCol = modBy 16 chordNumber } }, Cmd.none )
+            ( { model | activeChord = modBy 8 chordNumber, drumMachineModel = updatedDrumMachine }, Cmd.none )
 
         Pause ->
             ( { model | playing = False }, sendAudioCommand "pause" )
@@ -294,7 +219,9 @@ update msg model =
             ( { model | bpm = bpm }, transmitBpm bpm )
 
         ToggleDrumCell ( columnNumber, rowNumber ) ->
-            toggleDrumCellState model columnNumber rowNumber
+            let newDrumModel = DrumMachine.toggleDrumCellState model.drumMachineModel columnNumber rowNumber in
+            let newModel = { model | drumMachineModel = newDrumModel } in
+            ( newModel, toggleDrumPatternAt (DrumMachine.numberToDrumType rowNumber, columnNumber) )
 
         SetNote ( rowNumber, columnNumber, noteDefinition ) ->
             case Array.get columnNumber model.melody of
@@ -493,32 +420,12 @@ sequencerCard model =
         , chordView 7 model
         , playView model
         ]
-
-
-isDrumCellPopulated : Model -> Int -> Int -> Bool
-isDrumCellPopulated model columnNumber rowNumber =
-    case Array.get columnNumber model.drumMachine.cells of
-        Maybe.Just column ->
-            case Array.get rowNumber column of
-                Maybe.Just CellEnabled ->
-                    True
-
-                Maybe.Just CellDisabled ->
-                    False
-
-                Maybe.Nothing ->
-                    False
-
-        Maybe.Nothing ->
-            False
-
-
 patternCol : Model -> Int -> Html Msg
 patternCol model columnNumber =
     div
         [ class "drumcol"
         , attribute "data-on"
-            (if model.drumMachine.activeCol == columnNumber then
+            (if (DrumMachine.isColActive columnNumber model.drumMachineModel) then
                 "true"
 
              else
@@ -529,7 +436,7 @@ patternCol model columnNumber =
             [ class "drumcell"
             , onClick (ToggleDrumCell ( columnNumber, 0 ))
             , attribute "data-enabled"
-                (if isDrumCellPopulated model columnNumber 0 then
+                (if DrumMachine.isDrumCellPopulated model.drumMachineModel columnNumber 0 then
                     "true"
 
                  else
@@ -541,7 +448,7 @@ patternCol model columnNumber =
             [ class "drumcell"
             , onClick (ToggleDrumCell ( columnNumber, 1 ))
             , attribute "data-enabled"
-                (if isDrumCellPopulated model columnNumber 1 then
+                (if DrumMachine.isDrumCellPopulated model.drumMachineModel columnNumber 1 then
                     "true"
 
                  else
@@ -553,7 +460,7 @@ patternCol model columnNumber =
             [ class "drumcell"
             , onClick (ToggleDrumCell ( columnNumber, 2 ))
             , attribute "data-enabled"
-                (if isDrumCellPopulated model columnNumber 2 then
+                (if DrumMachine.isDrumCellPopulated model.drumMachineModel columnNumber 2 then
                     "true"
 
                  else
@@ -592,7 +499,6 @@ drumMachineCard model =
                 ]
             ]
         ]
-
 
 view : Model -> Html Msg
 view model =
