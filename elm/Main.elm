@@ -1,10 +1,10 @@
 port module Main exposing (..)
 
-import DrumMachine
 import Array exposing (Array)
 import Browser
 import Browser.Events exposing (onKeyDown)
 import Debug exposing (toString)
+import DrumMachine
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
@@ -14,8 +14,10 @@ import Platform.Cmd as Cmd
 import String exposing (toInt)
 import WebAudio exposing (oscillator)
 
+
 type alias Model =
     { melody : Array Chord, activeChord : Int, playing : Bool, bpm : Int, oscillator : Oscillator, drumMachineModel : DrumMachine.Model }
+
 
 main =
     Browser.element { init = init, subscriptions = subscriptions, update = update, view = view }
@@ -27,6 +29,7 @@ subscriptions _ =
         [ receiveCurrentChordUpdate UpdateChord
         , onKeyDown (Json.Decode.map ProcessKeyboardEvent decodeKeyboardEvent)
         ]
+
 
 port transmitMelody : List (List Float) -> Cmd msg
 
@@ -94,6 +97,7 @@ type Wave
 type alias Oscillator =
     { wave : Wave }
 
+
 type NoteDefinition
     = NotPopulated
     | Populated Note
@@ -111,6 +115,7 @@ type Note
 
 type alias Chord =
     Array NoteDefinition
+
 
 init : () -> ( Model, Cmd Msg )
 init _ =
@@ -196,6 +201,7 @@ melodyFrequencies model =
         |> Array.toList
         |> List.map (\chord -> chordToFrequencies chord)
 
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -219,9 +225,15 @@ update msg model =
             ( { model | bpm = bpm }, transmitBpm bpm )
 
         ToggleDrumCell ( columnNumber, rowNumber ) ->
-            let newDrumModel = DrumMachine.toggleDrumCellState model.drumMachineModel columnNumber rowNumber in
-            let newModel = { model | drumMachineModel = newDrumModel } in
-            ( newModel, toggleDrumPatternAt (DrumMachine.numberToDrumType rowNumber, columnNumber) )
+            let
+                newDrumModel =
+                    DrumMachine.toggleDrumCellState model.drumMachineModel columnNumber rowNumber
+            in
+            let
+                newModel =
+                    { model | drumMachineModel = newDrumModel }
+            in
+            ( newModel, toggleDrumPatternAt ( DrumMachine.numberToDrumType rowNumber, columnNumber ) )
 
         SetNote ( rowNumber, columnNumber, noteDefinition ) ->
             case Array.get columnNumber model.melody of
@@ -420,12 +432,14 @@ sequencerCard model =
         , chordView 7 model
         , playView model
         ]
+
+
 patternCol : Model -> Int -> Html Msg
 patternCol model columnNumber =
     div
         [ class "drumcol"
         , attribute "data-on"
-            (if (DrumMachine.isColActive columnNumber model.drumMachineModel) then
+            (if DrumMachine.isColActive columnNumber model.drumMachineModel then
                 "true"
 
              else
@@ -499,6 +513,7 @@ drumMachineCard model =
                 ]
             ]
         ]
+
 
 view : Model -> Html Msg
 view model =
