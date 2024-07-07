@@ -10,7 +10,7 @@ import Sequencer
 
 
 type alias Model =
-    { controlBar : ControlBar.Model, sequencer : Sequencer.Model, drumMachine : DrumMachine.Model, activeChord : Int, playing : Bool, bpm : Int }
+    { controlBar : ControlBar.Model, sequencer : Sequencer.Model, drumMachine : DrumMachine.Model  }
 
 
 
@@ -22,9 +22,6 @@ init _ =
     ( { controlBar = ControlBar.init
       , sequencer = Sequencer.init
       , drumMachine = DrumMachine.init
-      , activeChord = 0
-      , playing = False
-      , bpm = 200
       }
     , Cmd.none
     )
@@ -71,7 +68,7 @@ update msg model =
                 ( updatedSequencer, _ ) =
                     Sequencer.update (Sequencer.SetCurrentStep step) model.sequencer
             in
-            ( { model | activeChord = modBy 8 step, drumMachine = updatedDrumMachine, sequencer = updatedSequencer }, Cmd.none )
+            ( { model | drumMachine = updatedDrumMachine, sequencer = updatedSequencer }, Cmd.none )
 
         ControlBarMsg controlBarMsg ->
             let
