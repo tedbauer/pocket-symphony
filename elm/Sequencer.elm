@@ -155,32 +155,6 @@ chordView columnNumber model =
         ]
         (createChord 0 8 columnNumber model)
 
-
-playView : Model -> Html Msg
-playView model =
-    div [ class "ctrl" ]
-        [ div [ class "play", onClick Play ] [ text "▶️" ]
-        , div [ class "pause", onClick Pause ] [ text "⏸️" ]
-        , div [ class "reset", onClick Reset ] [ text "⏮️" ]
-        , input
-            [ class "bpm"
-            , type_ "text"
-            , placeholder (toString model.bpm)
-            , value (toString model.bpm)
-            , onInput
-                (\bpm ->
-                    case toInt bpm of
-                        Maybe.Just v ->
-                            UpdateBpm v
-
-                        Maybe.Nothing ->
-                            UpdateBpm model.bpm
-                )
-            ]
-            []
-        ]
-
-
 displayWave : Model -> String
 displayWave model =
     stringOfWave model.oscillator.wave
@@ -217,7 +191,6 @@ sequencerCard model =
         , chordView 5 model
         , chordView 6 model
         , chordView 7 model
-        -- , playView model
         ]
 
 
@@ -260,10 +233,6 @@ type Msg
     = SetNote ( Int, Int, NoteDefinition )
     | SetCurrentStep Int
     | UpdateOscillator OscillatorUpdate
-    | Play -- TODO: this will be global
-    | Pause -- TODO: this will be global
-    | Reset -- TODO: this will be global
-    | UpdateBpm Int -- TODO: this will be global
 
 
 isNote : NoteDefinition -> Bool
@@ -319,18 +288,6 @@ melodyFrequencies model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Play ->
-            ( model, Cmd.none )
-
-        Pause ->
-            ( model, Cmd.none )
-
-        Reset ->
-            ( model, Cmd.none )
-
-        UpdateBpm bpm ->
-            ( { model | bpm = bpm }, Cmd.none )
-
         SetCurrentStep step ->
             ( { model | activeChord = (modBy 8 step) }, Cmd.none )
 
