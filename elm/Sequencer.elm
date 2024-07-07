@@ -155,6 +155,7 @@ chordView columnNumber model =
         ]
         (createChord 0 8 columnNumber model)
 
+
 displayWave : Model -> String
 displayWave model =
     stringOfWave model.oscillator.wave
@@ -203,6 +204,12 @@ view model =
 -- UPDATE
 
 
+type Msg
+    = SetNote ( Int, Int, NoteDefinition )
+    | SetCurrentStep Int
+    | UpdateOscillator OscillatorUpdate
+
+
 prevWave : Wave -> Wave
 prevWave wave =
     case wave of
@@ -227,12 +234,6 @@ nextWave wave =
 
         Triangle ->
             Sine
-
-
-type Msg
-    = SetNote ( Int, Int, NoteDefinition )
-    | SetCurrentStep Int
-    | UpdateOscillator OscillatorUpdate
 
 
 isNote : NoteDefinition -> Bool
@@ -289,7 +290,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         SetCurrentStep step ->
-            ( { model | activeChord = (modBy 8 step) }, Cmd.none )
+            ( { model | activeChord = modBy 8 step }, Cmd.none )
 
         SetNote ( rowNumber, columnNumber, noteDefinition ) ->
             case Array.get columnNumber model.melody of
