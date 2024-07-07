@@ -1,4 +1,4 @@
-port module DrumMachine exposing (Model, Msg(..), initModel, update, view)
+port module DrumMachine exposing (Model, Msg(..), init, update, view)
 
 import Array
 import Html exposing (..)
@@ -7,22 +7,10 @@ import Html.Events exposing (onClick)
 import Platform.Cmd as Cmd
 
 
-port toggleDrumPatternAt : ( String, Int ) -> Cmd msg
-
-
 type alias Model =
     { activeCol : Int
     , cells : Array.Array DrumColumn
     }
-
-
-type Msg
-    = ToggleDrumCell Int Int
-    | UpdateActiveColumn Int
-
-
-type alias DrumColumn =
-    Array.Array DrumCellState
 
 
 type DrumCellState
@@ -30,19 +18,46 @@ type DrumCellState
     | CellDisabled
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    case msg of
-        ToggleDrumCell columnNumber rowNumber ->
-            ( toggleDrumCellState model columnNumber rowNumber, toggleDrumPatternAt ( numberToDrumType rowNumber, columnNumber ) )
-
-        UpdateActiveColumn columnNumber ->
-            ( updateActiveCol columnNumber model, Cmd.none )
+type alias DrumColumn =
+    Array.Array DrumCellState
 
 
-view : Model -> Html Msg
-view model =
-    drumMachineCard model
+
+-- MODEL
+
+
+init : Model
+init =
+    { activeCol = 0
+    , cells = Array.repeat 16 (Array.repeat 3 CellDisabled)
+    }
+
+
+
+-- VIEW
+
+
+isDrumCellPopulated : Model -> Int -> Int -> Bool
+isDrumCellPopulated model columnNumber rowNumber =
+    case Array.get columnNumber model.cells of
+        Maybe.Just column ->
+            case Array.get rowNumber column of
+                Maybe.Just CellEnabled ->
+                    True
+
+                Maybe.Just CellDisabled ->
+                    False
+
+                Maybe.Nothing ->
+                    False
+
+        Maybe.Nothing ->
+            False
+
+
+isColActive : Int -> Model -> Bool
+isColActive col model =
+    model.activeCol == col
 
 
 patternCol : Model -> Int -> Html Msg
@@ -126,21 +141,18 @@ drumMachineCard model =
         ]
 
 
-isColActive : Int -> Model -> Bool
-isColActive col model =
-    model.activeCol == col
+view : Model -> Html Msg
+view model =
+    drumMachineCard model
 
 
-updateActiveCol : Int -> Model -> Model
-updateActiveCol activeCol model =
-    { model | activeCol = activeCol }
+
+-- UPDATE
 
 
-initModel : Model
-initModel =
-    { activeCol = 0
-    , cells = Array.repeat 16 (Array.repeat 3 CellDisabled)
-    }
+type Msg
+    = ToggleDrumCell Int Int
+    | UpdateActiveColumn Int
 
 
 flipCellState : DrumCellState -> DrumCellState
@@ -151,24 +163,6 @@ flipCellState state =
 
         CellDisabled ->
             CellEnabled
-
-
-isDrumCellPopulated : Model -> Int -> Int -> Bool
-isDrumCellPopulated model columnNumber rowNumber =
-    case Array.get columnNumber model.cells of
-        Maybe.Just column ->
-            case Array.get rowNumber column of
-                Maybe.Just CellEnabled ->
-                    True
-
-                Maybe.Just CellDisabled ->
-                    False
-
-                Maybe.Nothing ->
-                    False
-
-        Maybe.Nothing ->
-            False
 
 
 toggleDrumCellState : Model -> Int -> Int -> Model
@@ -198,6 +192,11 @@ toggleDrumCellState model columnNumber rowNumber =
             model
 
 
+updateActiveCol : Int -> Model -> Model
+updateActiveCol activeCol model =
+    { model | activeCol = activeCol }
+
+
 numberToDrumType : Int -> String
 numberToDrumType number =
     if number == 0 then
@@ -208,3 +207,20 @@ numberToDrumType number =
 
     else
         "hihat"
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        ToggleDrumCell columnNumber rowNumber ->
+            ( toggleDrumCellState model columnNumber rowNumber, toggleDrumPatternAt ( numberToDrumType rowNumber, columnNumber ) )
+
+        UpdateActiveColumn columnNumber ->
+            ( updateActiveCol columnNumber model, Cmd.none )
+
+
+
+-- PORTS
+
+
+port toggleDrumPatternAt : ( String, Int ) -> Cmd msg

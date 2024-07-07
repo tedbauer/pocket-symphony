@@ -1,91 +1,17 @@
-port module Sequencer exposing (Model, Msg(..), update, initModel, view)
+port module Sequencer exposing (Model, Msg(..), init, update, view)
 
 import Array exposing (Array)
 import Debug exposing (toString)
+import DrumMachine exposing (Msg(..))
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
 import String exposing (toInt)
 import WebAudio exposing (oscillator)
-import DrumMachine exposing (Msg(..))
-
-
-port transmitMelody : List (List Float) -> Cmd msg
-
-
-port transmitWave : String -> Cmd msg
 
 
 type alias Model =
     { melody : Array Chord, activeChord : Int, oscillator : Oscillator, bpm : Int }
-
-
-type Msg
-    = SetNote ( Int, Int, NoteDefinition )
-    | UpdateOscillator OscillatorUpdate
-    | UpdateActiveColumn Int
-    | Play -- TODO: this will be global
-    | Pause -- TODO: this will be global
-    | Reset -- TODO: this will be global
-    | UpdateBpm Int -- TODO: this will be global
-
-
-view : Model -> Html Msg
-view model =
-    sequencerCard model
-
-
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    case msg of
-        Play ->
-            ( model, Cmd.none )
-
-        Pause ->
-            ( model, Cmd.none )
-
-        Reset ->
-            ( model, Cmd.none )
-
-        UpdateBpm bpm ->
-            ( { model | bpm = bpm }, Cmd.none )
-
-        UpdateActiveColumn columnNumber ->
-            ( { model | activeChord = columnNumber }, Cmd.none ) 
-
-        SetNote ( rowNumber, columnNumber, noteDefinition ) ->
-            case Array.get columnNumber model.melody of
-                Maybe.Just chord ->
-                    let
-                        updatedChord =
-                            Array.set rowNumber noteDefinition chord
-                    in
-                    let
-                        updatedMelody =
-                            Array.set columnNumber updatedChord model.melody
-                    in
-                    let
-                        updatedModel =
-                            { model | melody = updatedMelody }
-                    in
-                    ( updatedModel, transmitMelody (melodyFrequencies updatedModel) )
-
-                Maybe.Nothing ->
-                    ( model, Cmd.none )
-
-        UpdateOscillator NextWave ->
-            let
-                oscillator =
-                    model.oscillator
-            in
-            ( { model | oscillator = { oscillator | wave = nextWave oscillator.wave } }, transmitWave (stringOfWave (nextWave oscillator.wave)) )
-
-        UpdateOscillator PrevWave ->
-            let
-                oscillator =
-                    model.oscillator
-            in
-            ( { model | oscillator = { oscillator | wave = prevWave oscillator.wave } }, transmitWave (stringOfWave (prevWave oscillator.wave)) )
 
 
 type NoteDefinition
@@ -122,8 +48,12 @@ type Note
     | B
 
 
-initModel : Model
-initModel =
+
+-- MODEL
+
+
+init : Model
+init =
     { melody = Array.repeat 8 (Array.repeat 8 NotPopulated)
     , activeChord = 0
     , oscillator = { wave = Sine }
@@ -131,98 +61,8 @@ initModel =
     }
 
 
-nextWave : Wave -> Wave
-nextWave wave =
-    case wave of
-        Sine ->
-            Square
 
-        Square ->
-            Triangle
-
-        Triangle ->
-            Sine
-
-
-prevWave : Wave -> Wave
-prevWave wave =
-    case wave of
-        Square ->
-            Sine
-
-        Triangle ->
-            Square
-
-        Sine ->
-            Triangle
-
-
-stringOfWave : Wave -> String
-stringOfWave wave =
-    case wave of
-        Sine ->
-            "Sine"
-
-        Square ->
-            "Square"
-
-        Triangle ->
-            "Triangle"
-
-
-chordToFrequencies : List NoteDefinition -> List Float
-chordToFrequencies noteDefinitions =
-    List.filter isNote noteDefinitions
-        |> List.map
-            (\note ->
-                case note of
-                    Populated C ->
-                        261.63
-
-                    Populated D ->
-                        293.66
-
-                    Populated E ->
-                        329.63
-
-                    Populated F ->
-                        349.23
-
-                    Populated G ->
-                        392.0
-
-                    Populated A ->
-                        440.0
-
-                    Populated B ->
-                        493.88
-
-                    NotPopulated ->
-                        -1.0
-            )
-
-
-melodyFrequencies : Model -> List (List Float)
-melodyFrequencies model =
-    model.melody
-        |> Array.map Array.toList
-        |> Array.toList
-        |> List.map (\chord -> chordToFrequencies chord)
-
-
-freqencyOfNote : Note -> Float
-freqencyOfNote _ =
-    0.0
-
-
-isNote : NoteDefinition -> Bool
-isNote note =
-    case note of
-        Populated _ ->
-            True
-
-        NotPopulated ->
-            False
+-- VIEW
 
 
 isNotePopulated : Model -> Int -> Int -> Bool
@@ -341,14 +181,27 @@ playView model =
         ]
 
 
-determineActiveX : Model -> String
-determineActiveX model =
-    toString (5 + model.activeChord * 37) ++ "px"
-
-
 displayWave : Model -> String
 displayWave model =
     stringOfWave model.oscillator.wave
+
+
+stringOfWave : Wave -> String
+stringOfWave wave =
+    case wave of
+        Sine ->
+            "Sine"
+
+        Square ->
+            "Square"
+
+        Triangle ->
+            "Triangle"
+
+
+determineActiveX : Model -> String
+determineActiveX model =
+    toString (5 + model.activeChord * 37) ++ "px"
 
 
 sequencerCard : Model -> Html Msg
@@ -366,3 +219,161 @@ sequencerCard model =
         , chordView 7 model
         , playView model
         ]
+
+
+view : Model -> Html Msg
+view model =
+    sequencerCard model
+
+
+
+-- UPDATE
+
+
+prevWave : Wave -> Wave
+prevWave wave =
+    case wave of
+        Square ->
+            Sine
+
+        Triangle ->
+            Square
+
+        Sine ->
+            Triangle
+
+
+nextWave : Wave -> Wave
+nextWave wave =
+    case wave of
+        Sine ->
+            Square
+
+        Square ->
+            Triangle
+
+        Triangle ->
+            Sine
+
+
+type Msg
+    = SetNote ( Int, Int, NoteDefinition )
+    | UpdateOscillator OscillatorUpdate
+    | UpdateActiveColumn Int
+    | Play -- TODO: this will be global
+    | Pause -- TODO: this will be global
+    | Reset -- TODO: this will be global
+    | UpdateBpm Int -- TODO: this will be global
+
+
+isNote : NoteDefinition -> Bool
+isNote note =
+    case note of
+        Populated _ ->
+            True
+
+        NotPopulated ->
+            False
+
+
+chordToFrequencies : List NoteDefinition -> List Float
+chordToFrequencies noteDefinitions =
+    List.filter isNote noteDefinitions
+        |> List.map
+            (\note ->
+                case note of
+                    Populated C ->
+                        261.63
+
+                    Populated D ->
+                        293.66
+
+                    Populated E ->
+                        329.63
+
+                    Populated F ->
+                        349.23
+
+                    Populated G ->
+                        392.0
+
+                    Populated A ->
+                        440.0
+
+                    Populated B ->
+                        493.88
+
+                    NotPopulated ->
+                        -1.0
+            )
+
+
+melodyFrequencies : Model -> List (List Float)
+melodyFrequencies model =
+    model.melody
+        |> Array.map Array.toList
+        |> Array.toList
+        |> List.map (\chord -> chordToFrequencies chord)
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        Play ->
+            ( model, Cmd.none )
+
+        Pause ->
+            ( model, Cmd.none )
+
+        Reset ->
+            ( model, Cmd.none )
+
+        UpdateBpm bpm ->
+            ( { model | bpm = bpm }, Cmd.none )
+
+        UpdateActiveColumn columnNumber ->
+            ( { model | activeChord = columnNumber }, Cmd.none )
+
+        SetNote ( rowNumber, columnNumber, noteDefinition ) ->
+            case Array.get columnNumber model.melody of
+                Maybe.Just chord ->
+                    let
+                        updatedChord =
+                            Array.set rowNumber noteDefinition chord
+                    in
+                    let
+                        updatedMelody =
+                            Array.set columnNumber updatedChord model.melody
+                    in
+                    let
+                        updatedModel =
+                            { model | melody = updatedMelody }
+                    in
+                    ( updatedModel, transmitMelody (melodyFrequencies updatedModel) )
+
+                Maybe.Nothing ->
+                    ( model, Cmd.none )
+
+        UpdateOscillator NextWave ->
+            let
+                oscillator =
+                    model.oscillator
+            in
+            ( { model | oscillator = { oscillator | wave = nextWave oscillator.wave } }, transmitWave (stringOfWave (nextWave oscillator.wave)) )
+
+        UpdateOscillator PrevWave ->
+            let
+                oscillator =
+                    model.oscillator
+            in
+            ( { model | oscillator = { oscillator | wave = prevWave oscillator.wave } }, transmitWave (stringOfWave (prevWave oscillator.wave)) )
+
+
+
+-- PORTS
+
+
+port transmitMelody : List (List Float) -> Cmd msg
+
+
+port transmitWave : String -> Cmd msg

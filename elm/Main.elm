@@ -16,11 +16,40 @@ import String exposing (toInt)
 import WebAudio exposing (oscillator)
 
 
-port receiveCurrentChordUpdate : (Int -> msg) -> Sub msg
-
-
 type alias Model =
     { sequencer : Sequencer.Model, drumMachine : DrumMachine.Model, activeChord : Int, playing : Bool, bpm : Int }
+
+
+
+-- MODEL
+
+
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( { sequencer = Sequencer.init
+      , drumMachine = DrumMachine.init
+      , activeChord = 0
+      , playing = False
+      , bpm = 200
+      }
+    , Cmd.none
+    )
+
+
+
+-- VIEW
+
+
+view : Model -> Html Msg
+view model =
+    div [ class "cardholder" ]
+        [ Html.map (\msg -> SequencerMsg msg) (Sequencer.view model.sequencer)
+        , Html.map (\msg -> DrumMachineMsg msg) (DrumMachine.view model.drumMachine)
+        ]
+
+
+
+-- UPDATE
 
 
 type Msg
@@ -30,34 +59,22 @@ type Msg
     | ProcessKeyboardEvent KeyboardEvent
 
 
-main =
-    Browser.element { init = init, subscriptions = subscriptions, update = update, view = view }
+processKeyboardEvent : KeyboardEvent -> Model -> ( Model, Cmd Msg )
+processKeyboardEvent event model =
+    case event.key of
+        Maybe.Just k ->
+            if k == " " then
+                if model.playing then
+                    ( { model | playing = False }, sendAudioCommand "pause" )
 
+                else
+                    ( { model | playing = True }, sendAudioCommand "play" )
 
-subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Sub.batch
-        [ receiveCurrentChordUpdate UpdateChord
-        , onKeyDown (Json.Decode.map ProcessKeyboardEvent decodeKeyboardEvent)
-        ]
+            else
+                ( model, Cmd.none )
 
-
-port transmitBpm : Int -> Cmd msg
-
-
-port sendAudioCommand : String -> Cmd msg
-
-
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( { sequencer = Sequencer.initModel
-      , drumMachine = DrumMachine.initModel
-      , activeChord = 0
-      , playing = False
-      , bpm = 200
-      }
-    , Cmd.none
-    )
+        Maybe.Nothing ->
+            ( model, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -96,33 +113,41 @@ update msg model =
             let
                 ( updatedDrumMachine, _ ) =
                     DrumMachine.update (DrumMachine.UpdateActiveColumn (modBy 16 chordNumber)) model.drumMachine
+
                 ( updatedSequencer, _ ) =
                     Sequencer.update (Sequencer.UpdateActiveColumn (modBy 8 chordNumber)) model.sequencer
             in
             ( { model | activeChord = modBy 8 chordNumber, drumMachine = updatedDrumMachine, sequencer = updatedSequencer }, Cmd.none )
 
 
-processKeyboardEvent : KeyboardEvent -> Model -> ( Model, Cmd Msg )
-processKeyboardEvent event model =
-    case event.key of
-        Maybe.Just k ->
-            if k == " " then
-                if model.playing then
-                    ( { model | playing = False }, sendAudioCommand "pause" )
 
-                else
-                    ( { model | playing = True }, sendAudioCommand "play" )
-
-            else
-                ( model, Cmd.none )
-
-        Maybe.Nothing ->
-            ( model, Cmd.none )
+-- SUBSCRIPTIONS
 
 
-view : Model -> Html Msg
-view model =
-    div [ class "cardholder" ]
-        [ Html.map (\msg -> SequencerMsg msg) (Sequencer.view model.sequencer)
-        , Html.map (\msg -> DrumMachineMsg msg) (DrumMachine.view model.drumMachine)
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.batch
+        [ receiveCurrentChordUpdate UpdateChord
+        , onKeyDown (Json.Decode.map ProcessKeyboardEvent decodeKeyboardEvent)
         ]
+
+
+
+-- PORTS
+
+
+port transmitBpm : Int -> Cmd msg
+
+
+port receiveCurrentChordUpdate : (Int -> msg) -> Sub msg
+
+
+port sendAudioCommand : String -> Cmd msg
+
+
+
+-- MAIN
+
+
+main =
+    Browser.element { init = init, subscriptions = subscriptions, update = update, view = view }
