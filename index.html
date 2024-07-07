@@ -19,7 +19,7 @@
     });
 
     const audioPlayer = new Audio.AudioPlayer((currentChord => {
-      app.ports.receiveCurrentChordUpdate.send(currentChord);
+      app.ports.receiveCurrentStepUpdate.send(currentChord);
     }));
 
     app.ports.transmitMelody.subscribe(function (melody) {

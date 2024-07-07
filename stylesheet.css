@@ -1,12 +1,19 @@
-.cardholder {
-    margin: 5px;
+.root {
     display: flex;
     justify-content: center;
 }
 
+.cardrows {
+    display: inline-block
+}
+
+.cardrow {
+    display: flex;
+    width: fit-content;
+}
+
 .card {
-    height: 220px;
-    margin: 10px;
+    margin: 4px;
     border-style: solid;
     border-width: 1px;
     border-radius: 10px;

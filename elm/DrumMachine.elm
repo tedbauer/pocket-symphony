@@ -152,7 +152,7 @@ view model =
 
 type Msg
     = ToggleDrumCell Int Int
-    | UpdateActiveColumn Int
+    | SetCurrentStep Int
 
 
 flipCellState : DrumCellState -> DrumCellState
@@ -215,8 +215,8 @@ update msg model =
         ToggleDrumCell columnNumber rowNumber ->
             ( toggleDrumCellState model columnNumber rowNumber, toggleDrumPatternAt ( numberToDrumType rowNumber, columnNumber ) )
 
-        UpdateActiveColumn columnNumber ->
-            ( updateActiveCol columnNumber model, Cmd.none )
+        SetCurrentStep step ->
+            ( updateActiveCol (modBy 16 step) model, Cmd.none )
 
 
 

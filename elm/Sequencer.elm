@@ -217,7 +217,7 @@ sequencerCard model =
         , chordView 5 model
         , chordView 6 model
         , chordView 7 model
-        , playView model
+        -- , playView model
         ]
 
 
@@ -258,8 +258,8 @@ nextWave wave =
 
 type Msg
     = SetNote ( Int, Int, NoteDefinition )
+    | SetCurrentStep Int
     | UpdateOscillator OscillatorUpdate
-    | UpdateActiveColumn Int
     | Play -- TODO: this will be global
     | Pause -- TODO: this will be global
     | Reset -- TODO: this will be global
@@ -331,8 +331,8 @@ update msg model =
         UpdateBpm bpm ->
             ( { model | bpm = bpm }, Cmd.none )
 
-        UpdateActiveColumn columnNumber ->
-            ( { model | activeChord = columnNumber }, Cmd.none )
+        SetCurrentStep step ->
+            ( { model | activeChord = (modBy 8 step) }, Cmd.none )
 
         SetNote ( rowNumber, columnNumber, noteDefinition ) ->
             case Array.get columnNumber model.melody of
