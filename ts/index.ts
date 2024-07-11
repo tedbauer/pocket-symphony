@@ -13,13 +13,23 @@ export class AudioPlayer {
 
   private wave: any = "sine";
 
+  private lfoFrequency: number;
+  private lfoIntensity: number;
+
+  private octave: number;
+
   constructor(viewUpdateCallback: Function) {
     this.viewUpdateCallback = viewUpdateCallback;
 
-    this.melody = [[],[],[],[],[],[],[],[]];
+    this.melody = [[], [], [], [], [], [], [], []];
     this.currentChord = 0;
     this.playing = false;
     this.bpm = 200;
+
+    this.lfoFrequency = 10;
+    this.lfoIntensity = 9;
+
+    this.octave = 0;
 
     this.drumPatterns = new Map([
       ["kick", Array(16).fill(false)],
@@ -53,7 +63,7 @@ export class AudioPlayer {
     const output = buffer.getChannelData(0);
 
     for (let i = 0; i < bufferSize; i++) {
-        output[i] = Math.random() * 2 - 1;
+      output[i] = Math.random() * 2 - 1;
     }
 
     const source = this.audioCtx!.createBufferSource();
@@ -74,7 +84,7 @@ export class AudioPlayer {
     const output = buffer.getChannelData(0);
 
     for (let i = 0; i < bufferSize; i++) {
-        output[i] = Math.random() * 2 - 1;
+      output[i] = Math.random() * 2 - 1;
     }
 
     const source = this.audioCtx!.createBufferSource();
@@ -102,11 +112,23 @@ export class AudioPlayer {
 
         const oscillator = this.audioCtx!.createOscillator();
         oscillator.type = this.wave;
-        oscillator.frequency.setValueAtTime(frequency, this.audioCtx!.currentTime);
+        oscillator.frequency.setValueAtTime(frequency * 2 ** this.octave, this.audioCtx!.currentTime);
         oscillator.connect(gainNode);
+
+        const lfo = this.audioCtx!.createOscillator();
+        lfo.type = 'sine';
+        lfo.frequency.setValueAtTime(this.lfoFrequency, this.audioCtx!.currentTime);
+
+        const lfoGain = this.audioCtx!.createGain();
+        lfoGain.gain.setValueAtTime(this.lfoIntensity, this.audioCtx!.currentTime);
+
+        lfo.connect(lfoGain);
+        lfoGain.connect(oscillator.frequency);
 
         oscillator.start(this.currentChord * this.bpm / 1000);
         oscillator.stop((this.currentChord * this.bpm / 1000) + 0.2);
+        // oscillator.stop((this.currentChord * this.bpm / 1000) + 1);
+        lfo.start();
       })
 
       if (this.drumPatterns.get("kick")![this.currentChord % 16]) {
@@ -162,7 +184,6 @@ export class AudioPlayer {
   }
 
   public toggleDrumPatternAt(drum: string, column: number) {
-    console.log(drum);
     this.drumPatterns.get(drum)![column] = !this.drumPatterns.get(drum)![column];
   }
 
@@ -172,5 +193,17 @@ export class AudioPlayer {
 
   public updateBpm(bpm: number) {
     this.bpm = bpm;
+  }
+
+  public updateLfoFrequency(freq: number) {
+    this.lfoFrequency = freq;
+  }
+
+  public updateLfoIntensity(intensity: number) {
+    this.lfoIntensity = intensity;
+  }
+
+  public updateOctave(octave: number) {
+    this.octave = octave;
   }
 }

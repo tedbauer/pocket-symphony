@@ -201,3 +201,58 @@
     margin: 7px;
 
 }
+
+.lfo {
+    display: flex;
+    width: 250px;
+    flex-direction: row;
+}
+
+.graph {
+    background-color: #f5ede6;
+    margin-top: 6px;
+    border-width: 1px;
+    border-radius: 10px;
+}
+
+.lfoparams {
+    padding-left: 0;
+    font-size: 10px;
+}
+
+.lfoparams ul {
+    list-style-type: none;
+    padding-left: 15px;
+}
+
+.lfoparams li {
+    margin: 5px;
+}
+
+.parambutton {
+    cursor: pointer;
+    display: inline;
+    margin: 2px;
+    transition: transform 0.1s ease-in-out, background-color 0.1s ease-in-out;
+    padding: 3px;
+    border-radius: 3px;
+}
+
+.parambutton:hover {
+    cursor: pointer;
+    background-color: lightcyan;
+}
+
+.sequencer {
+    display: flex;
+    flex-direction: column;
+    font-size: 80%;
+}
+
+.seqctrl {
+    margin-top: 7px;
+    border-radius: 3px;
+    padding: 5px;
+    background-color: #F9F9F9;
+    width: fit-content;
+}

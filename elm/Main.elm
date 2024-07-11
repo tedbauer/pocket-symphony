@@ -5,12 +5,14 @@ import ControlBar
 import DrumMachine
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (onClick, onMouseDown)
+import Lfo
 import Platform.Cmd as Cmd
 import Sequencer
 
 
 type alias Model =
-    { controlBar : ControlBar.Model, sequencer : Sequencer.Model, drumMachine : DrumMachine.Model  }
+    { controlBar : ControlBar.Model, sequencer : Sequencer.Model, drumMachine : DrumMachine.Model, lfo : Lfo.Model }
 
 
 
@@ -22,6 +24,7 @@ init _ =
     ( { controlBar = ControlBar.init
       , sequencer = Sequencer.init
       , drumMachine = DrumMachine.init
+      , lfo = Lfo.init
       }
     , Cmd.none
     )
@@ -29,6 +32,20 @@ init _ =
 
 
 -- VIEW
+
+
+generateWavePoints : Int -> Float -> Float -> String
+generateWavePoints width amplitude frequency =
+    List.range 0 width
+        |> List.map
+            (\x ->
+                let
+                    y =
+                        amplitude * sin (frequency * toFloat x * pi / 180)
+                in
+                String.fromInt x ++ "," ++ String.fromFloat (100 - y)
+            )
+        |> String.join " "
 
 
 view : Model -> Html Msg
@@ -41,6 +58,14 @@ view model =
             , div [ class "cardrow" ]
                 [ Html.map SequencerMsg (Sequencer.view model.sequencer)
                 , Html.map DrumMachineMsg (DrumMachine.view model.drumMachine)
+                ]
+            , div [ class "cardrow" ]
+                [ Html.map LfoMsg (Lfo.view model.lfo)
+                , div [ class "card" ]
+                    [ div
+                        [ class "cardtitle" ]
+                        [ text "🔊 Delay" ]
+                    ]
                 ]
             ]
         ]
@@ -55,6 +80,7 @@ type Msg
     | ControlBarMsg ControlBar.Msg
     | SequencerMsg Sequencer.Msg
     | DrumMachineMsg DrumMachine.Msg
+    | LfoMsg Lfo.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -90,6 +116,13 @@ update msg model =
                     Sequencer.update sequencerMsg model.sequencer
             in
             ( { model | sequencer = subModel }, Cmd.map SequencerMsg subCmd )
+
+        LfoMsg lfoMsg ->
+            let
+                ( subModel, subCmd ) =
+                    Lfo.update lfoMsg model.lfo
+            in
+            ( { model | lfo = subModel }, Cmd.map LfoMsg subCmd )
 
 
 

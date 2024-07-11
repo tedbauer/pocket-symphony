@@ -5,13 +5,13 @@ import Debug exposing (toString)
 import DrumMachine exposing (Msg(..))
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick, onInput)
+import Html.Events exposing (onClick, onInput, onMouseDown)
 import String exposing (toInt)
 import WebAudio exposing (oscillator)
 
 
 type alias Model =
-    { melody : Array Chord, activeChord : Int, oscillator : Oscillator, bpm : Int }
+    { melody : Array Chord, activeChord : Int, oscillator : Oscillator, bpm : Int, octave : Int }
 
 
 type NoteDefinition
@@ -58,6 +58,7 @@ init =
     , activeChord = 0
     , oscillator = { wave = Sine }
     , bpm = 200
+    , octave = 0
     }
 
 
@@ -86,7 +87,7 @@ isNotePopulated model rowNumber columnNumber =
 createNote : Int -> Int -> Model -> Html Msg
 createNote rowNumber columnNumber model =
     div
-        [ onClick
+        [ onMouseDown
             (SetNote
                 ( rowNumber
                 , columnNumber
@@ -183,15 +184,27 @@ sequencerCard : Model -> Html Msg
 sequencerCard model =
     div [ class "card" ]
         [ div [ class "cardtitle" ] [ text "🧮 Sequencer" ]
-        , div [ class "playbar" ] [ div [ class "activenote", style "left" (determineActiveX model) ] [ text "⬇️" ] ]
-        , chordView 0 model
-        , chordView 1 model
-        , chordView 2 model
-        , chordView 3 model
-        , chordView 4 model
-        , chordView 5 model
-        , chordView 6 model
-        , chordView 7 model
+        , div [ class "playbar" ]
+            [ div [ class "activenote", style "left" (determineActiveX model) ] [ text "⬇️" ] ]
+        , div
+            [ class "sequencer" ]
+            [ div []
+                [ chordView 0 model
+                , chordView 1 model
+                , chordView 2 model
+                , chordView 3 model
+                , chordView 4 model
+                , chordView 5 model
+                , chordView 6 model
+                , chordView 7 model
+                ]
+            , div [ class "seqctrl" ]
+                [ div [ class "parambutton", onMouseDown (SetOctave (model.octave + 1)) ] [ text "⬆️" ]
+                , div [ class "parambutton", onMouseDown (SetOctave (model.octave - 1)) ] [ text "⬇️" ]
+                , text "Octave: "
+                , text (toString model.octave)
+                ]
+            ]
         ]
 
 
@@ -207,6 +220,7 @@ view model =
 type Msg
     = SetNote ( Int, Int, NoteDefinition )
     | SetCurrentStep Int
+    | SetOctave Int
     | UpdateOscillator OscillatorUpdate
 
 
@@ -283,7 +297,7 @@ melodyFrequencies model =
     model.melody
         |> Array.map Array.toList
         |> Array.toList
-        |> List.map (\chord -> chordToFrequencies chord)
+        |> List.map chordToFrequencies
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -326,6 +340,9 @@ update msg model =
             in
             ( { model | oscillator = { oscillator | wave = prevWave oscillator.wave } }, transmitWave (stringOfWave (prevWave oscillator.wave)) )
 
+        SetOctave octave ->
+            ( { model | octave = octave }, transmitOctave octave )
+
 
 
 -- PORTS
@@ -335,3 +352,6 @@ port transmitMelody : List (List Float) -> Cmd msg
 
 
 port transmitWave : String -> Cmd msg
+
+
+port transmitOctave : Int -> Cmd msg

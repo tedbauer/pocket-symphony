@@ -43,5 +43,17 @@
     app.ports.sendAudioCommand.subscribe(function (audioCommand) {
       audioPlayer.processAudioCommand(audioCommand)
     });
+
+    app.ports.transmitLfoFrequency.subscribe(function (lfoFrequency) {
+      audioPlayer.updateLfoFrequency(lfoFrequency);
+    });
+
+    app.ports.transmitLfoIntensity.subscribe(function (lfoIntensity) {
+      audioPlayer.updateLfoIntensity(lfoIntensity);
+    });
+
+    app.ports.transmitOctave.subscribe(function (octave) {
+      audioPlayer.updateOctave(octave);
+    });
   </script>
 </body>

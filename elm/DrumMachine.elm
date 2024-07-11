@@ -3,7 +3,7 @@ port module DrumMachine exposing (Model, Msg(..), init, update, view)
 import Array
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onMouseDown)
 import Platform.Cmd as Cmd
 
 
@@ -74,7 +74,7 @@ patternCol model columnNumber =
         ]
         [ div
             [ class "drumcell"
-            , onClick (ToggleDrumCell columnNumber 0)
+            , onMouseDown (ToggleDrumCell columnNumber 0)
             , attribute "data-enabled"
                 (if isDrumCellPopulated model columnNumber 0 then
                     "true"
@@ -86,7 +86,7 @@ patternCol model columnNumber =
             []
         , div
             [ class "drumcell"
-            , onClick (ToggleDrumCell columnNumber 1)
+            , onMouseDown (ToggleDrumCell columnNumber 1)
             , attribute "data-enabled"
                 (if isDrumCellPopulated model columnNumber 1 then
                     "true"
@@ -98,7 +98,7 @@ patternCol model columnNumber =
             []
         , div
             [ class "drumcell"
-            , onClick (ToggleDrumCell columnNumber 2)
+            , onMouseDown (ToggleDrumCell columnNumber 2)
             , attribute "data-enabled"
                 (if isDrumCellPopulated model columnNumber 2 then
                     "true"
