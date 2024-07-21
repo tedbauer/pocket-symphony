@@ -4,7 +4,7 @@ main.js: elm/Main.elm
 	elm make elm/Main.elm --output=$@
 
 build: main.js
-	npx webpack
+	npx webpack --mode=development
 
 dev: build
 	open index.html
@@ -12,4 +12,4 @@ dev: build
 clean:
 	rm -rf dist
 	rm -rf node_modules
-	rm main.js
+	-rm main.js

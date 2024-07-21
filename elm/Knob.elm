@@ -7,6 +7,7 @@ import Json.Decode as Decode
 import Browser.Events
 import Task
 import Browser.Dom
+import Time
 
 type alias Model =
     { min : Float
@@ -26,6 +27,8 @@ type Msg
     | ContinueDrag Float Float
     | EndDrag
     | SetCenter Float Float
+    | NoOp
+    | AnimationFrame Time.Posix
 
 init : String -> Float -> Float -> Float -> Float -> ( Model, Cmd Msg )
 init label min max step initialValue =
@@ -75,6 +78,12 @@ update msg model =
         SetCenter x y ->
             ( { model | centerX = x, centerY = y }, Cmd.none )
 
+        NoOp ->
+            ( model, Cmd.none )
+
+        AnimationFrame _ ->
+            ( model, getElementPosition )
+
 view : Model -> Html Msg
 view model =
     let
@@ -111,21 +120,22 @@ roundToStep : Float -> Float -> Float
 roundToStep value step =
     toFloat (round (value / step)) * step
 
+getElementPosition : Cmd Msg
+getElementPosition =
+    Browser.Dom.getElement "lfo-frequency-knob"
+        |> Task.attempt (\result ->
+            case result of
+                Ok { element } ->
+                    SetCenter (element.x + element.width / 2) (element.y + element.height / 2)
+                Err _ ->
+                    SetCenter 30 30
+        )
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Browser.Events.onResize (\_ _ -> Cmd.none)
-        , Browser.Events.onAnimationFrame (\_ ->
-            Task.attempt
-                (\result ->
-                    case result of
-                        Ok { element } ->
-                            SetCenter (element.x + element.width / 2) (element.y + element.height / 2)
-                        Err _ ->
-                            SetCenter 30 30
-                )
-                (Browser.Dom.getElement "lfo-frequency-knob")
-          )
+        [ Browser.Events.onResize (\_ _ -> NoOp)
+        , Browser.Events.onAnimationFrame AnimationFrame
         , if model.isDragging then
             Sub.batch
                 [ Browser.Events.onMouseMove (Decode.map2 ContinueDrag (Decode.field "pageX" Decode.float) (Decode.field "pageY" Decode.float))

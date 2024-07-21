@@ -21,11 +21,15 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
+    let
+        ( knobModel, knobCmd ) =
+            Knob.init "Frequency" 0 10 0.1 10
+    in
     ( { frequency = 10
       , intensity = 9
-      , frequencyKnob = Knob.init "Frequency" 0 10 0.1 10
+      , frequencyKnob = knobModel
       }
-    , Cmd.none
+    , Cmd.map KnobMsg knobCmd
     )
 
 
