@@ -58,11 +58,12 @@ update msg model =
         ContinueDrag x y ->
             if model.isDragging then
                 let
-                    dx = x - model.centerX
-                    dy = y - model.centerY
-                    angle = atan2 dy dx
-                    newValue = (angle + pi) / (2 * pi) * (model.max - model.min) + model.min
-                    clampedValue = clamp model.min model.max newValue
+                    dx = x - model.lastMousePosition.x
+                    dy = y - model.lastMousePosition.y
+                    sensitivity = 0.01  -- Increased sensitivity
+                    delta = (dx - dy) * sensitivity
+                    newValue = model.value + delta
+                    clampedValue = clamp model.min model.max (roundToStep newValue model.step)
                 in
                 ( { model | value = clampedValue, lastMousePosition = { x = x, y = y } }, Cmd.none )
             else
@@ -86,15 +87,9 @@ view model =
         ]
         [ div
             [ class "knob"
+            , class (if model.isDragging then "dragging" else "")
             , style "transform" ("rotate(" ++ String.fromFloat rotation ++ "deg)")
             , on "mousedown" (Decode.map2 StartDrag (Decode.field "pageX" Decode.float) (Decode.field "pageY" Decode.float))
-            , on "mousemove" (Decode.map2 ContinueDrag (Decode.field "pageX" Decode.float) (Decode.field "pageY" Decode.float))
-            , on "mouseup" (Decode.succeed EndDrag)
-            , on "mouseleave" (Decode.succeed EndDrag)
-            , on "touchstart" (Decode.map2 StartDrag (Decode.at ["touches", "0", "pageX"] Decode.float) (Decode.at ["touches", "0", "pageY"] Decode.float))
-            , on "touchmove" (Decode.map2 ContinueDrag (Decode.at ["touches", "0", "pageX"] Decode.float) (Decode.at ["touches", "0", "pageY"] Decode.float))
-            , on "touchend" (Decode.succeed EndDrag)
-            , on "touchcancel" (Decode.succeed EndDrag)
             ]
             []
         , div [ class "knob-label" ] [ text (model.label ++ ": " ++ String.fromFloat (roundToDecimal 2 model.value)) ]
@@ -102,7 +97,7 @@ view model =
 
 valueToRotation : Model -> Float
 valueToRotation model =
-    (model.value - model.min) / (model.max - model.min) * 270 - 135
+    (model.value - model.min) / (model.max - model.min) * 300 - 150
 
 roundToDecimal : Int -> Float -> Float
 roundToDecimal places value =
@@ -112,8 +107,12 @@ roundToDecimal places value =
     in
     toFloat (round (value * factor)) / factor
 
+roundToStep : Float -> Float -> Float
+roundToStep value step =
+    toFloat (round (value / step)) * step
+
 subscriptions : Model -> Sub Msg
-subscriptions _ =
+subscriptions model =
     Sub.batch
         [ Browser.Events.onResize (\_ _ -> Cmd.none)
         , Browser.Events.onAnimationFrame (\_ ->
@@ -127,4 +126,11 @@ subscriptions _ =
                 )
                 (Browser.Dom.getElement "lfo-frequency-knob")
           )
+        , if model.isDragging then
+            Sub.batch
+                [ Browser.Events.onMouseMove (Decode.map2 ContinueDrag (Decode.field "pageX" Decode.float) (Decode.field "pageY" Decode.float))
+                , Browser.Events.onMouseUp (Decode.succeed EndDrag)
+                ]
+          else
+            Sub.none
         ]
