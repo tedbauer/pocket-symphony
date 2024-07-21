@@ -61,8 +61,7 @@ calculateValue : Model -> Float -> Float -> Float
 calculateValue model pageX pageY =
     let
         knobRect =
-            -- This should be replaced with actual knob dimensions
-            { left = 0, top = 0, width = 100, height = 100 }
+            { left = 0, top = 0, width = 60, height = 60 }
 
         centerX =
             knobRect.left + (knobRect.width / 2)
@@ -80,7 +79,7 @@ calculateValue model pageX pageY =
                 angle
 
         proportion =
-            normalizedAngle / (2 * pi)
+            (normalizedAngle + pi / 2) / (2 * pi)
 
         range =
             model.max - model.min
