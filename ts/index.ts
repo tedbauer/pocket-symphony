@@ -45,7 +45,7 @@ export class AudioPlayer {
     this.intervalIds = [];
     this.audioCtx!;
 
-    this.attack = 0.02;  // 20 milliseconds
+    this.attack = 0;  // 20 milliseconds
     this.decay = 0.1;    // 100 milliseconds
     this.sustain = 0.02;  // 60% of peak volume
     this.release = 0.001; // 150 milliseconds
@@ -224,6 +224,7 @@ export class AudioPlayer {
 
   public updateAttack(attack: number) {
     this.attack = attack;
+    console.log("attack is set to " + this.attack)
   }
 
   public updateRelease(release: number) {

@@ -3,14 +3,15 @@ port module Envelope exposing (..)
 import Html exposing (Html, div, li, text, tr, track, ul)
 import Html.Attributes exposing (class, height, width)
 import Html.Events exposing (onClick, onMouseDown)
+import Knob
 import Svg exposing (line, svg)
 
 
 type alias Model =
-    { attack : Float
-    , sustain : Float
-    , decay : Float
-    , release : Float
+    { attack : Knob.Model
+    , sustain : Knob.Model
+    , decay : Knob.Model
+    , release : Knob.Model
     }
 
 
@@ -20,10 +21,10 @@ type alias Model =
 
 init : Model
 init =
-    { attack = 0
-    , sustain = 0
-    , decay = 0
-    , release = 0
+    { attack = Knob.init 0 0 0.19 0.01
+    , sustain = Knob.init 0 0 1 0.01
+    , decay = Knob.init 0 0 0.19 0.01
+    , release = Knob.init 0 0 0.19 0.01
     }
 
 
@@ -37,30 +38,20 @@ view model =
         [ div [ class "cardtitle" ] [ text "✉️ Envelope" ]
         , div [ class "envelope" ]
             [ div [ class "envelopecontrol" ]
-                [ text "Attack"
-                , div [ class "envelopecontrolslider", onClick (SetAttack (model.attack + 1)) ]
-                    [ text (String.fromFloat model.attack)
-                    ]
-                ]
-            , div [ class "envelopecontrol" ]
-                [ text "Sustain"
-                , div [ class "envelopecontrolslider" ]
-                    [ text (String.fromFloat model.sustain)
-                    ]
-                ]
-            , div [ class "envelopecontrol" ]
-                [ text "Decay"
-                , div [ class "envelopecontrolslider" ]
-                    [ text (String.fromFloat model.decay)
-                    ]
-                ]
-            , div [ class "envelopecontrol" ]
-                [ text "Release"
-                , div [ class "envelopecontrolslider" ]
-                    [ text (String.fromFloat model.release)
-                    ]
+                [ envelopeControl "Attack" model.attack AttackMsg
+                , envelopeControl "Sustain" model.sustain SustainMsg
+                , envelopeControl "Decay" model.decay DecayMsg
+                , envelopeControl "Release" model.release ReleaseMsg
                 ]
             ]
+        ]
+
+
+envelopeControl : String -> Knob.Model -> (Knob.Msg -> Msg) -> Html Msg
+envelopeControl label knobModel msg =
+    div [ class "envelopecontrol" ]
+        [ text label
+        , Html.map msg (Knob.view knobModel)
         ]
 
 
@@ -69,39 +60,80 @@ view model =
 
 
 type Msg
-    = SetAttack Float
-    | SetSustain Float
-    | SetDecay Float
-    | SetRelease Float
+    = AttackMsg Knob.Msg
+    | SustainMsg Knob.Msg
+    | DecayMsg Knob.Msg
+    | ReleaseMsg Knob.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        SetAttack attack ->
-            ( { model | attack = attack }, transmitAttack (round attack) )
+        AttackMsg knobMsg ->
+            let
+                ( newKnob, maybeValue ) =
+                    Knob.update knobMsg model.attack
+            in
+            ( { model | attack = newKnob }
+            , maybeValue |> Maybe.map transmitAttack |> Maybe.withDefault Cmd.none
+            )
 
-        SetSustain sustain ->
-            ( { model | sustain = sustain }, transmitSustain (round sustain) )
+        SustainMsg knobMsg ->
+            let
+                ( newKnob, maybeValue ) =
+                    Knob.update knobMsg model.sustain
+            in
+            ( { model | sustain = newKnob }
+            , maybeValue |> Maybe.map transmitSustain |> Maybe.withDefault Cmd.none
+            )
 
-        SetDecay decay ->
-            ( { model | decay = decay }, transmitDecay (round decay) )
+        DecayMsg knobMsg ->
+            let
+                ( newKnob, maybeValue ) =
+                    Knob.update knobMsg model.decay
+            in
+            ( { model | decay = newKnob }
+            , maybeValue |> Maybe.map transmitDecay |> Maybe.withDefault Cmd.none
+            )
 
-        SetRelease release ->
-            ( { model | release = release }, transmitRelease (round release) )
+        ReleaseMsg knobMsg ->
+            let
+                ( newKnob, maybeValue ) =
+                    Knob.update knobMsg model.release
+            in
+            ( { model | release = newKnob }
+            , maybeValue |> Maybe.map transmitRelease |> Maybe.withDefault Cmd.none
+            )
+
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.batch
+        [ Sub.map AttackMsg
+            (Knob.subscriptions model.attack)
+        , Sub.map
+            SustainMsg
+            (Knob.subscriptions model.sustain)
+        , Sub.map DecayMsg (Knob.subscriptions model.decay)
+        , Sub.map ReleaseMsg (Knob.subscriptions model.release)
+        ]
 
 
 
 -- PORTS
 
 
-port transmitAttack : Int -> Cmd msg
+port transmitAttack : Float -> Cmd msg
 
 
-port transmitSustain : Int -> Cmd msg
+port transmitSustain : Float -> Cmd msg
 
 
-port transmitDecay : Int -> Cmd msg
+port transmitDecay : Float -> Cmd msg
 
 
-port transmitRelease : Int -> Cmd msg
+port transmitRelease : Float -> Cmd msg

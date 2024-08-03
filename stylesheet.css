@@ -27,6 +27,7 @@
     border-radius: 10px;
     padding: 10px;
     font-family: 'Merriweather', serif;
+    box-shadow: black 5px 5px;
 }
 
 .note {
@@ -225,6 +226,7 @@
 .lfoparams {
     padding-left: 0;
     font-size: 10px;
+    display: flex;
 }
 
 .lfoparams ul {
@@ -266,4 +268,35 @@
 
 body {
     margin: 0;
+}
+
+.envelopecontrol {
+    display: inline-block;
+    flex-direction: column;
+    font-size: 80%;
+}
+
+.knob {
+    margin: 5px;
+    width: 30px;
+    height: 30px;
+    border-style: solid;
+    border-width: 1px;
+    box-shadow: black 1px 1px;
+}
+
+.knob:hover {
+    cursor: pointer;
+    background-color: #F9EBF8;
+}
+
+.knob-pointer {
+    width: 0;
+    height: 0;
+    border-left: 2px solid transparent;
+    border-right: 2px solid transparent;
+    border-bottom: 9px solid #A585A2;
+    position: absolute;
+    top: 5px;
+    left: 15px;
 }

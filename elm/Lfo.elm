@@ -3,13 +3,14 @@ port module Lfo exposing (..)
 import Html exposing (Html, div, li, text, ul)
 import Html.Attributes exposing (class, height, width)
 import Html.Events exposing (onMouseDown)
+import Knob
 import Svg exposing (line, svg)
 import Svg.Attributes
 
 
 type alias Model =
-    { frequency : Float
-    , intensity : Float
+    { frequency : Knob.Model
+    , intensity : Knob.Model
     }
 
 
@@ -19,8 +20,8 @@ type alias Model =
 
 init : Model
 init =
-    { frequency = 10
-    , intensity = 9
+    { frequency = Knob.init 1 0 50 0.1
+    , intensity = Knob.init 1 0 200 0.1
     }
 
 
@@ -63,7 +64,7 @@ view model =
                         ]
                         []
                     , Svg.polyline
-                        [ Svg.Attributes.points (generateWavePoints 400 model.intensity model.frequency)
+                        [ Svg.Attributes.points (generateWavePoints 400 model.intensity.value model.frequency.value)
                         , Svg.Attributes.fill "none"
                         , Svg.Attributes.stroke "purple"
                         , Svg.Attributes.strokeWidth "5"
@@ -72,8 +73,18 @@ view model =
                     ]
                 ]
             , div [ class "lfoparams" ]
-                [ ul [] [ li [] [ div [ class "parambutton", onMouseDown (SetFrequency (model.frequency + 1)) ] [ text "➕" ], div [ class "parambutton", onMouseDown (SetFrequency (model.frequency - 1)) ] [ text "➖" ], text "Frequency: ", text (String.fromFloat model.frequency) ], li [] [ div [ class "parambutton", onMouseDown (SetIntensity (model.intensity + 1)) ] [ text "➕" ], div [ class "parambutton", onMouseDown (SetIntensity (model.intensity - 1)) ] [ text "➖" ], text "Intensity: ", text (String.fromFloat model.intensity) ], li [] [ text "Wave" ], li [] [ text "Target" ] ] ]
+                [ lfoControl "Frequency" model.frequency FrequencyMsg
+                , lfoControl "Intensity" model.intensity IntensityMsg
+                ]
             ]
+        ]
+
+
+lfoControl : String -> Knob.Model -> (Knob.Msg -> Msg) -> Html Msg
+lfoControl label knobModel msg =
+    div [ class "lfo-control" ]
+        [ text label
+        , Html.map msg (Knob.view knobModel)
         ]
 
 
@@ -82,25 +93,48 @@ view model =
 
 
 type Msg
-    = SetFrequency Float
-    | SetIntensity Float
+    = FrequencyMsg Knob.Msg
+    | IntensityMsg Knob.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        SetFrequency frequency ->
-            ( { model | frequency = frequency }, transmitLfoFrequency (round frequency) )
+        FrequencyMsg knobMsg ->
+            let
+                ( newKnob, maybeValue ) =
+                    Knob.update knobMsg model.frequency
+            in
+            ( { model | frequency = newKnob }, maybeValue |> Maybe.map transmitLfoFrequency |> Maybe.withDefault Cmd.none )
 
-        SetIntensity intensity ->
-            ( { model | intensity = intensity }, transmitLfoIntensity (round intensity) )
+        IntensityMsg knobMsg ->
+            let
+                ( newKnob, maybeValue ) =
+                    Knob.update knobMsg model.intensity
+            in
+            ( { model | intensity = newKnob }, maybeValue |> Maybe.map transmitLfoIntensity |> Maybe.withDefault Cmd.none )
+
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.batch
+        [ Sub.map FrequencyMsg
+            (Knob.subscriptions model.frequency)
+        , Sub.map
+            IntensityMsg
+            (Knob.subscriptions model.intensity)
+        ]
 
 
 
 -- PORTS
 
 
-port transmitLfoFrequency : Int -> Cmd msg
+port transmitLfoFrequency : Float -> Cmd msg
 
 
-port transmitLfoIntensity : Int -> Cmd msg
+port transmitLfoIntensity : Float -> Cmd msg

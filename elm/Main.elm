@@ -141,11 +141,13 @@ update msg model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
+subscriptions model =
     Sub.batch
         [ receiveCurrentStepUpdate
             SetCurrentStep
         , Sub.map ControlBarMsg ControlBar.subscriptions
+        , Sub.map EnvelopeMsg (Envelope.subscriptions model.envelope)
+        , Sub.map LfoMsg (Lfo.subscriptions model.lfo)
         ]
 
 
