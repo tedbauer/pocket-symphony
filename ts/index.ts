@@ -18,6 +18,11 @@ export class AudioPlayer {
 
   private octave: number;
 
+  private attack: number;
+  private release: number;
+  private sustain: number;
+  private decay: number;
+
   constructor(viewUpdateCallback: Function) {
     this.viewUpdateCallback = viewUpdateCallback;
 
@@ -39,6 +44,11 @@ export class AudioPlayer {
 
     this.intervalIds = [];
     this.audioCtx!;
+
+    this.attack = 0.02;  // 20 milliseconds
+    this.decay = 0.1;    // 100 milliseconds
+    this.sustain = 0.02;  // 60% of peak volume
+    this.release = 0.001; // 150 milliseconds
   }
 
   private playKick() {
@@ -107,7 +117,12 @@ export class AudioPlayer {
       let chord: number[] = this.melody[this.currentChord % 8];
       chord.forEach((frequency) => {
         const gainNode = this.audioCtx!.createGain();
-        gainNode.gain.setValueAtTime(0.8, this.audioCtx!.currentTime);
+        const startTime = this.currentChord * this.bpm / 1000;
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(0.8, startTime + this.attack); // Attack
+        gainNode.gain.linearRampToValueAtTime(this.sustain * 0.8, startTime + this.attack + this.decay); // Decay to Sustain
+        gainNode.gain.setValueAtTime(this.sustain * 0.8, startTime + 0.2 - this.release); // Sustain
+        gainNode.gain.linearRampToValueAtTime(0, startTime + 0.2); // Release
         gainNode.connect(this.audioCtx!.destination);
 
         const oscillator = this.audioCtx!.createOscillator();
@@ -205,5 +220,21 @@ export class AudioPlayer {
 
   public updateOctave(octave: number) {
     this.octave = octave;
+  }
+
+  public updateAttack(attack: number) {
+    this.attack = attack;
+  }
+
+  public updateRelease(release: number) {
+    this.release = release;
+  }
+
+  public updateSustain(sustain: number) {
+    this.sustain = sustain;
+  }
+
+  public updateDecay(decay: number) {
+    this.decay = decay;
   }
 }

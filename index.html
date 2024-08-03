@@ -55,5 +55,21 @@
     app.ports.transmitOctave.subscribe(function (octave) {
       audioPlayer.updateOctave(octave);
     });
+
+    app.ports.transmitAttack.subscribe(function (attack) {
+      audioPlayer.updateAttack(attack);
+    });
+
+    app.ports.transmitDecay.subscribe(function (decay) {
+      audioPlayer.updateDecay(decay);
+    });
+
+    app.ports.transmitSustain.subscribe(function (sustain) {
+      audioPlayer.updateSustain(sustain);
+    });
+
+    app.ports.transmitRelease.subscribe(function (release) {
+      audioPlayer.updateRelease(release);
+    });
   </script>
 </body>

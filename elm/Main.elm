@@ -3,6 +3,7 @@ port module Main exposing (..)
 import Browser
 import ControlBar
 import DrumMachine
+import Envelope
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onMouseDown)
@@ -12,7 +13,7 @@ import Sequencer
 
 
 type alias Model =
-    { controlBar : ControlBar.Model, sequencer : Sequencer.Model, drumMachine : DrumMachine.Model, lfo : Lfo.Model }
+    { controlBar : ControlBar.Model, sequencer : Sequencer.Model, drumMachine : DrumMachine.Model, lfo : Lfo.Model, envelope : Envelope.Model }
 
 
 
@@ -25,6 +26,7 @@ init _ =
       , sequencer = Sequencer.init
       , drumMachine = DrumMachine.init
       , lfo = Lfo.init
+      , envelope = Envelope.init
       }
     , Cmd.none
     )
@@ -66,6 +68,7 @@ view model =
                         [ class "cardtitle" ]
                         [ text "🔊 Delay" ]
                     ]
+                , Html.map EnvelopeMsg (Envelope.view model.envelope)
                 ]
             ]
         ]
@@ -80,6 +83,7 @@ type Msg
     | ControlBarMsg ControlBar.Msg
     | SequencerMsg Sequencer.Msg
     | DrumMachineMsg DrumMachine.Msg
+    | EnvelopeMsg Envelope.Msg
     | LfoMsg Lfo.Msg
 
 
@@ -123,6 +127,13 @@ update msg model =
                     Lfo.update lfoMsg model.lfo
             in
             ( { model | lfo = subModel }, Cmd.map LfoMsg subCmd )
+
+        EnvelopeMsg envelopeMsg ->
+            let
+                ( subModel, subCmd ) =
+                    Envelope.update envelopeMsg model.envelope
+            in
+            ( { model | envelope = subModel }, Cmd.map EnvelopeMsg subCmd )
 
 
 
