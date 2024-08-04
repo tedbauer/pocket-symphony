@@ -1,17 +1,17 @@
 port module ControlBar exposing (..)
 
+import Browser.Events exposing (onKeyDown)
 import Debug exposing (toString)
 import Html exposing (Html, div, input, text)
 import Html.Attributes exposing (class, placeholder, type_, value)
 import Html.Events exposing (onClick, onInput)
-import String exposing (toInt)
-import Keyboard.Event exposing (KeyboardEvent, decodeKeyboardEvent)
-import Browser.Events exposing (onKeyDown)
 import Json.Decode
+import Keyboard.Event exposing (KeyboardEvent, decodeKeyboardEvent)
+import Knob
 
 
 type alias Model =
-    { bpm : Int, playing : Bool, activeStep : Int }
+    { bpm : Knob.Model, playing : Bool, activeStep : Int }
 
 
 
@@ -20,7 +20,7 @@ type alias Model =
 
 init : Model
 init =
-    { bpm = 200
+    { bpm = Knob.init 200 150 300 1
     , playing = False
     , activeStep = 0
     }
@@ -33,25 +33,15 @@ init =
 view : Model -> Html Msg
 view model =
     div [ class "card" ]
-        [ div [ class "play", onClick Play ] [ text "▶️" ]
-        , div [ class "pause", onClick Pause ] [ text "⏸️" ]
-        , div [ class "reset", onClick Reset ] [ text "⏮️" ]
-        , input
-            [ class "bpm"
-            , type_ "text"
-            , placeholder (toString model.bpm)
-            , value (toString model.bpm)
-            , onInput
-                (\bpm ->
-                    case toInt bpm of
-                        Maybe.Just v ->
-                            UpdateBpm v
-
-                        Maybe.Nothing ->
-                            UpdateBpm model.bpm
-                )
+        [ div
+            [ class "controlbar" ]
+            [ div [ class "play", onClick Play ] [ text "▶️" ]
+            , div [ class "pause", onClick Pause ] [ text "⏸️" ]
+            , div
+                [ class "tempocontrol" ]
+                [ text "Tempo", Html.map BpmMessage (Knob.view 20 model.bpm) ]
+            , div [ class "maintitle" ] [ text "🎼 Pocket Symphony" ]
             ]
-            [ text "ho" ]
         ]
 
 
@@ -60,7 +50,7 @@ view model =
 
 
 type Msg
-    = UpdateBpm Int
+    = BpmMessage Knob.Msg
     | Play
     | Pause
     | Reset
@@ -73,10 +63,10 @@ processKeyboardEvent event model =
         Maybe.Just k ->
             if k == " " then
                 if model.playing then
-                    ( { model | playing = False }, sendAudioCommand "pause")
+                    ( { model | playing = False }, sendAudioCommand "pause" )
 
                 else
-                    ( { model | playing = True }, sendAudioCommand "play")
+                    ( { model | playing = True }, sendAudioCommand "play" )
 
             else
                 ( model, Cmd.none )
@@ -88,8 +78,12 @@ processKeyboardEvent event model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        UpdateBpm v ->
-            ( { model | bpm = v }, transmitBpm v )
+        BpmMessage knobMsg ->
+            let
+                ( newKnob, maybeValue ) =
+                    Knob.update knobMsg model.bpm
+            in
+            ( { model | bpm = newKnob }, maybeValue |> Maybe.map round |> Maybe.map transmitBpm |> Maybe.withDefault Cmd.none )
 
         Play ->
             ( { model | playing = True }, sendAudioCommand "play" )
@@ -104,13 +98,18 @@ update msg model =
             processKeyboardEvent event model
 
 
+
 -- SUBSCRIPTIONS
 
-subscriptions : Sub Msg
-subscriptions =
-    Sub.batch [
-        onKeyDown (Json.Decode.map ProcessKeyboardEvent decodeKeyboardEvent)
-    ]
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.batch
+        [ onKeyDown (Json.Decode.map ProcessKeyboardEvent decodeKeyboardEvent)
+        , Sub.map BpmMessage
+            (Knob.subscriptions model.bpm)
+        ]
+
 
 
 -- PORTS

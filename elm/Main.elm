@@ -59,16 +59,16 @@ view model =
                 ]
             , div [ class "cardrow" ]
                 [ Html.map SequencerMsg (Sequencer.view model.sequencer)
-                , Html.map DrumMachineMsg (DrumMachine.view model.drumMachine)
-                ]
-            , div [ class "cardrow" ]
-                [ Html.map LfoMsg (Lfo.view model.lfo)
+                , Html.map EnvelopeMsg (Envelope.view model.envelope)
                 , div [ class "card" ]
                     [ div
                         [ class "cardtitle" ]
                         [ text "🔊 Delay" ]
                     ]
-                , Html.map EnvelopeMsg (Envelope.view model.envelope)
+                ]
+            , div [ class "cardrow" ]
+                [ Html.map LfoMsg (Lfo.view model.lfo)
+                , Html.map DrumMachineMsg (DrumMachine.view model.drumMachine)
                 ]
             ]
         ]
@@ -145,7 +145,7 @@ subscriptions model =
     Sub.batch
         [ receiveCurrentStepUpdate
             SetCurrentStep
-        , Sub.map ControlBarMsg ControlBar.subscriptions
+        , Sub.map ControlBarMsg (ControlBar.subscriptions model.controlBar)
         , Sub.map EnvelopeMsg (Envelope.subscriptions model.envelope)
         , Sub.map LfoMsg (Lfo.subscriptions model.lfo)
         ]

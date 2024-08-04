@@ -194,9 +194,8 @@
 
 .drummachine {
     display: flex;
-    padding-top: 10px;
+    padding-top: 22px;
     padding-right: 10px;
-
 }
 
 .drumlabels {
@@ -218,7 +217,7 @@
 
 .graph {
     background-color: #f5ede6;
-    margin-top: 6px;
+    margin-top: 15px;
     border-width: 1px;
     border-radius: 10px;
 }
@@ -256,6 +255,7 @@
     display: flex;
     flex-direction: column;
     font-size: 80%;
+    width: 300px;
 }
 
 .seqctrl {
@@ -271,15 +271,15 @@ body {
 }
 
 .envelopecontrol {
-    display: inline-block;
-    flex-direction: column;
-    font-size: 80%;
+    display: flex;
+    font-size: 60%;
+    justify-content: center;
+    align-items: center;
+    padding-top: 15px;
 }
 
 .knob {
     margin: 5px;
-    width: 30px;
-    height: 30px;
     border-style: solid;
     border-width: 1px;
     box-shadow: black 1px 1px;
@@ -297,6 +297,26 @@ body {
     border-right: 2px solid transparent;
     border-bottom: 9px solid #A585A2;
     position: absolute;
-    top: 5px;
-    left: 15px;
+}
+
+.maintitle {
+    margin-left: auto;
+
+}
+
+.controlbar {
+    display: flex;
+    align-items: center;
+}
+
+.tempocontrol {
+    font-size: 20%;
+    align-items: center;
+    margin-left: 10px;
+}
+
+.envelopeknob {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }

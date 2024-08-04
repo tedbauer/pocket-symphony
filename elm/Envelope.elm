@@ -1,10 +1,10 @@
 port module Envelope exposing (..)
 
-import Html exposing (Html, div, li, text, tr, track, ul)
-import Html.Attributes exposing (class, height, width)
-import Html.Events exposing (onClick, onMouseDown)
+import Html exposing (Html, div, text)
+import Html.Attributes exposing (class, height, style, width)
 import Knob
-import Svg exposing (line, svg)
+import Svg exposing (path, svg)
+import Svg.Attributes
 
 
 type alias Model =
@@ -37,21 +37,66 @@ view model =
     div [ class "card" ]
         [ div [ class "cardtitle" ] [ text "✉️ Envelope" ]
         , div [ class "envelope" ]
-            [ div [ class "envelopecontrol" ]
-                [ envelopeControl "Attack" model.attack AttackMsg
-                , envelopeControl "Sustain" model.sustain SustainMsg
-                , envelopeControl "Decay" model.decay DecayMsg
-                , envelopeControl "Release" model.release ReleaseMsg
+            [ graph model.attack.value model.decay.value model.sustain.value model.release.value
+            , div [ class "envelopecontrol" ]
+                [ div [ class "envelopeknob" ]
+                    [ Html.map AttackMsg (Knob.view 30 model.attack)
+                    , text "Attack"
+                    ]
+                , div [ class "envelopeknob" ] [ Html.map DecayMsg (Knob.view 30 model.decay), text "Decay" ]
+                , div [ class "envelopeknob" ] [ Html.map SustainMsg (Knob.view 30 model.sustain), text "Sustain" ]
+                , div [ class "envelopeknob" ] [ Html.map ReleaseMsg (Knob.view 30 model.release), text "Release" ]
                 ]
             ]
         ]
 
 
-envelopeControl : String -> Knob.Model -> (Knob.Msg -> Msg) -> Html Msg
-envelopeControl label knobModel msg =
-    div [ class "envelopecontrol" ]
-        [ text label
-        , Html.map msg (Knob.view knobModel)
+graph : Float -> Float -> Float -> Float -> Html Msg
+graph attack decay sustain release =
+    div [ class "graph" ]
+        [ svg
+            [ width 150
+            , height 100
+            , Svg.Attributes.viewBox "0 0 400 200"
+            ]
+            [ Svg.polyline
+                [ Svg.Attributes.points (generateWavePoints attack decay sustain release)
+                , Svg.Attributes.fill "none"
+                , Svg.Attributes.stroke "purple"
+                , Svg.Attributes.strokeWidth "2"
+                ]
+                []
+            ]
+        ]
+
+
+generateWavePoints : Float -> Float -> Float -> Float -> String
+generateWavePoints attack decay sustain release =
+    let
+        width =
+            400
+
+        maxValue =
+            150
+
+        attackEnd =
+            attack * width
+
+        decayEnd =
+            attackEnd + decay * width
+
+        sustainEnd =
+            decayEnd + ((1 - sustain) * width)
+
+        releaseEnd =
+            sustainEnd + release * width
+    in
+    String.join " "
+        [ String.fromFloat 0 ++ "," ++ String.fromFloat maxValue
+        , String.fromFloat attackEnd ++ "," ++ String.fromFloat maxValue
+        , String.fromFloat decayEnd ++ "," ++ String.fromFloat (sustain * maxValue)
+        , String.fromFloat sustainEnd ++ "," ++ String.fromFloat (sustain * maxValue)
+        , String.fromFloat releaseEnd ++ "," ++ String.fromFloat 0
         ]
 
 

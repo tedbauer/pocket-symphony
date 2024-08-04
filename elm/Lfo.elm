@@ -73,18 +73,10 @@ view model =
                     ]
                 ]
             , div [ class "lfoparams" ]
-                [ lfoControl "Frequency" model.frequency FrequencyMsg
-                , lfoControl "Intensity" model.intensity IntensityMsg
+                [ Html.map FrequencyMsg (Knob.view 30 model.frequency)
+                , Html.map IntensityMsg (Knob.view 30 model.intensity)
                 ]
             ]
-        ]
-
-
-lfoControl : String -> Knob.Model -> (Knob.Msg -> Msg) -> Html Msg
-lfoControl label knobModel msg =
-    div [ class "lfo-control" ]
-        [ text label
-        , Html.map msg (Knob.view knobModel)
         ]
 
 

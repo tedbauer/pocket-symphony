@@ -62,8 +62,8 @@ update msg model =
             ( { model | dragging = False, lastY = Nothing }, Nothing )
 
 
-view : Model -> Html Msg
-view model =
+view : Int -> Model -> Html Msg
+view length model =
     let
         rotation =
             (model.value - model.min) / (model.max - model.min) * 270 - 135
@@ -71,6 +71,8 @@ view model =
     div
         [ class "knob"
         , style "border-radius" "50%"
+        , style "width" (String.fromInt length ++ "px")
+        , style "height" (String.fromInt length ++ "px")
         , style "position" "relative"
         , style "cursor" "pointer"
         , on "mousedown" (Decode.succeed StartDrag)
@@ -79,16 +81,10 @@ view model =
             [ class "knob-pointer"
             , style "transform" ("translateX(-50%) rotate(" ++ String.fromFloat rotation ++ "deg)")
             , style "transform-origin" "bottom"
+            , style "top" (String.fromInt (length // 6) ++ "px")
+            , style "left" (String.fromInt (length // 2) ++ "px")
             ]
             []
-        , div
-            [ style "position" "absolute"
-            , style "bottom" "-20px"
-            , style "left" "0"
-            , style "width" "100%"
-            , style "text-align" "center"
-            ]
-            [ text (String.fromFloat (toFloat (round (model.value * 100)) / 100)) ]
         ]
 
 
