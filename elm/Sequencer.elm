@@ -6,6 +6,7 @@ import DrumMachine exposing (Msg(..))
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput, onMouseDown)
+import SoundEngineController
 import String exposing (toInt)
 import WebAudio exposing (oscillator)
 
@@ -321,7 +322,7 @@ update msg model =
                         updatedModel =
                             { model | melody = updatedMelody }
                     in
-                    ( updatedModel, transmitMelody (melodyFrequencies updatedModel) )
+                    ( updatedModel, SoundEngineController.stepEngine (SoundEngineController.encode_melody (melodyFrequencies updatedModel)) )
 
                 Maybe.Nothing ->
                     ( model, Cmd.none )
@@ -346,9 +347,6 @@ update msg model =
 
 
 -- PORTS
-
-
-port transmitMelody : List (List Float) -> Cmd msg
 
 
 port transmitWave : String -> Cmd msg

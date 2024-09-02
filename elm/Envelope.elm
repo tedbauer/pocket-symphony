@@ -3,6 +3,7 @@ port module Envelope exposing (..)
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class, height, style, width)
 import Knob
+import SoundEngineController
 import Svg exposing (path, svg)
 import Svg.Attributes
 
@@ -120,7 +121,7 @@ update msg model =
                     Knob.update knobMsg model.attack
             in
             ( { model | attack = newKnob }
-            , maybeValue |> Maybe.map transmitAttack |> Maybe.withDefault Cmd.none
+            , maybeValue |> Maybe.map (SoundEngineController.encode_envelope "attack") |> Maybe.map SoundEngineController.stepEngine |> Maybe.withDefault Cmd.none
             )
 
         SustainMsg knobMsg ->
@@ -129,7 +130,7 @@ update msg model =
                     Knob.update knobMsg model.sustain
             in
             ( { model | sustain = newKnob }
-            , maybeValue |> Maybe.map transmitSustain |> Maybe.withDefault Cmd.none
+            , maybeValue |> Maybe.map (SoundEngineController.encode_envelope "sustain") |> Maybe.map SoundEngineController.stepEngine |> Maybe.withDefault Cmd.none
             )
 
         DecayMsg knobMsg ->
@@ -138,7 +139,7 @@ update msg model =
                     Knob.update knobMsg model.decay
             in
             ( { model | decay = newKnob }
-            , maybeValue |> Maybe.map transmitDecay |> Maybe.withDefault Cmd.none
+            , maybeValue |> Maybe.map (SoundEngineController.encode_envelope "decay") |> Maybe.map SoundEngineController.stepEngine |> Maybe.withDefault Cmd.none
             )
 
         ReleaseMsg knobMsg ->
@@ -147,7 +148,7 @@ update msg model =
                     Knob.update knobMsg model.release
             in
             ( { model | release = newKnob }
-            , maybeValue |> Maybe.map transmitRelease |> Maybe.withDefault Cmd.none
+            , maybeValue |> Maybe.map (SoundEngineController.encode_envelope "release") |> Maybe.map SoundEngineController.stepEngine |> Maybe.withDefault Cmd.none
             )
 
 

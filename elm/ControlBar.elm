@@ -1,4 +1,4 @@
-port module ControlBar exposing (..)
+module ControlBar exposing (..)
 
 import Browser.Events exposing (onKeyDown)
 import Debug exposing (toString)
@@ -8,6 +8,7 @@ import Html.Events exposing (onClick, onInput)
 import Json.Decode
 import Keyboard.Event exposing (KeyboardEvent, decodeKeyboardEvent)
 import Knob
+import SoundEngineController
 
 
 type alias Model =
@@ -63,10 +64,14 @@ processKeyboardEvent event model =
         Maybe.Just k ->
             if k == " " then
                 if model.playing then
-                    ( { model | playing = False }, sendAudioCommand "pause" )
+                    ( { model | playing = False }
+                    , SoundEngineController.stepEngine (SoundEngineController.encode_audio_command_message "pause")
+                    )
 
                 else
-                    ( { model | playing = True }, sendAudioCommand "play" )
+                    ( { model | playing = True }
+                    , SoundEngineController.stepEngine (SoundEngineController.encode_audio_command_message "play")
+                    )
 
             else
                 ( model, Cmd.none )
@@ -83,16 +88,27 @@ update msg model =
                 ( newKnob, maybeValue ) =
                     Knob.update knobMsg model.bpm
             in
-            ( { model | bpm = newKnob }, maybeValue |> Maybe.map round |> Maybe.map transmitBpm |> Maybe.withDefault Cmd.none )
+            ( { model | bpm = newKnob }
+            , maybeValue
+                |> Maybe.map round
+                |> Maybe.map (SoundEngineController.stepEngine << SoundEngineController.encode_bpm_message)
+                |> Maybe.withDefault Cmd.none
+            )
 
         Play ->
-            ( { model | playing = True }, sendAudioCommand "play" )
+            ( { model | playing = True }
+            , SoundEngineController.stepEngine (SoundEngineController.encode_audio_command_message "play")
+            )
 
         Pause ->
-            ( { model | playing = False }, sendAudioCommand "pause" )
+            ( { model | playing = False }
+            , SoundEngineController.stepEngine (SoundEngineController.encode_audio_command_message "pause")
+            )
 
         Reset ->
-            ( { model | activeStep = 0 }, sendAudioCommand "reset" )
+            ( { model | activeStep = 0 }
+            , SoundEngineController.stepEngine (SoundEngineController.encode_audio_command_message "reset")
+            )
 
         ProcessKeyboardEvent event ->
             processKeyboardEvent event model
@@ -109,13 +125,3 @@ subscriptions model =
         , Sub.map BpmMessage
             (Knob.subscriptions model.bpm)
         ]
-
-
-
--- PORTS
-
-
-port sendAudioCommand : String -> Cmd msg
-
-
-port transmitBpm : Int -> Cmd msg

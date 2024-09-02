@@ -22,26 +22,19 @@
       app.ports.receiveCurrentStepUpdate.send(currentChord);
     }));
 
-    app.ports.transmitMelody.subscribe(function (melody) {
-      audioPlayer.updateMelody(melody);
-    });
-
     app.ports.toggleDrumPatternAt.subscribe(function (drumTypeAndColumn) {
       let drumType = drumTypeAndColumn[0];
       let columnNumber = drumTypeAndColumn[1];
       audioPlayer.toggleDrumPatternAt(drumType, columnNumber);
     });
 
-    app.ports.transmitBpm.subscribe(function (bpm) {
-      audioPlayer.updateBpm(bpm);
+    app.ports.stepEngine.subscribe(function (engineState) {
+      audioPlayer.stepEngine(engineState);
     });
 
+    // TODO: move these into stepEngine.
     app.ports.transmitWave.subscribe(function (wave) {
       audioPlayer.updateWave(wave);
-    });
-
-    app.ports.sendAudioCommand.subscribe(function (audioCommand) {
-      audioPlayer.processAudioCommand(audioCommand)
     });
 
     app.ports.transmitLfoFrequency.subscribe(function (lfoFrequency) {
@@ -56,20 +49,5 @@
       audioPlayer.updateOctave(octave);
     });
 
-    app.ports.transmitAttack.subscribe(function (attack) {
-      audioPlayer.updateAttack(attack);
-    });
-
-    app.ports.transmitDecay.subscribe(function (decay) {
-      audioPlayer.updateDecay(decay);
-    });
-
-    app.ports.transmitSustain.subscribe(function (sustain) {
-      audioPlayer.updateSustain(sustain);
-    });
-
-    app.ports.transmitRelease.subscribe(function (release) {
-      audioPlayer.updateRelease(release);
-    });
   </script>
 </body>

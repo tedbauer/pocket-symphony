@@ -1,8 +1,23 @@
+type EngineMessage = {
+  tag: string,
+  message: string,
+}
+
+type EngineState = {
+  delay: { time: number, feedback: number },
+  melody: number[][],
+  envelope: {
+    attack: number,
+    decay: number,
+    sustain: number,
+    release: number,
+  }
+}
+
 export class AudioPlayer {
   private viewUpdateCallback: Function;
   private audioCtx?: AudioContext;
 
-  private melody: number[][];
   private bpm: number;
   private currentChord;
   private playing: boolean;
@@ -17,16 +32,22 @@ export class AudioPlayer {
   private lfoIntensity: number;
 
   private octave: number;
-
-  private attack: number;
-  private release: number;
-  private sustain: number;
-  private decay: number;
+  private state: EngineState;
 
   constructor(viewUpdateCallback: Function) {
+    this.state = {
+      delay: { time: 0.9, feedback: 0 },
+      melody: [[], [], [], [], [], [], [], []],
+      envelope: {
+        attack: 0,
+        decay: 0.1,
+        sustain: 0.02,
+        release: 0.001
+      }
+    };
+
     this.viewUpdateCallback = viewUpdateCallback;
 
-    this.melody = [[], [], [], [], [], [], [], []];
     this.currentChord = 0;
     this.playing = false;
     this.bpm = 200;
@@ -44,11 +65,6 @@ export class AudioPlayer {
 
     this.intervalIds = [];
     this.audioCtx!;
-
-    this.attack = 0;
-    this.decay = 0.1;
-    this.sustain = 0.02;
-    this.release = 0.001;
   }
 
   private playKick() {
@@ -114,15 +130,15 @@ export class AudioPlayer {
     const interval = 50;
 
     while (this.playing && this.currentChord * this.bpm < (this.audioCtx!.currentTime * 1000) + lookahead) {
-      let chord: number[] = this.melody[this.currentChord % 8];
+      let chord: number[] = this.state.melody[this.currentChord % 8];
       chord.forEach((frequency) => {
         const gainNode = this.audioCtx!.createGain();
         const startTime = this.currentChord * this.bpm / 1000;
         gainNode.gain.setValueAtTime(0, startTime);
-        gainNode.gain.linearRampToValueAtTime(0.8, startTime + this.attack); // Attack
-        gainNode.gain.linearRampToValueAtTime(this.sustain * 0.8, startTime + this.attack + this.decay); // Decay to Sustain
-        gainNode.gain.setValueAtTime(this.sustain * 0.8, startTime + 0.2 - this.release); // Sustain
-        gainNode.gain.linearRampToValueAtTime(0, startTime + 0.2); // Release
+        gainNode.gain.linearRampToValueAtTime(0.8, startTime + this.state.envelope.attack);
+        gainNode.gain.linearRampToValueAtTime(this.state.envelope.sustain * 0.8, startTime + this.state.envelope.attack + this.state.envelope.decay);
+        gainNode.gain.setValueAtTime(this.state.envelope.sustain * 0.8, startTime + 0.2 - this.state.envelope.release);
+        gainNode.gain.linearRampToValueAtTime(0, startTime + 0.2);
         gainNode.connect(this.audioCtx!.destination);
 
         const oscillator = this.audioCtx!.createOscillator();
@@ -130,21 +146,24 @@ export class AudioPlayer {
         oscillator.frequency.setValueAtTime(frequency * 2 ** this.octave, this.audioCtx!.currentTime);
 
         // Create delay node
-        const delayNode = this.audioCtx!.createDelay(1.0); // Maximum delay of 5 seconds
-        delayNode.delayTime.setValueAtTime(0.9, this.audioCtx!.currentTime); // 300ms delay
 
         // Create feedback gain node
-        const feedbackGain = this.audioCtx!.createGain();
-        feedbackGain.gain.setValueAtTime(0.4, this.audioCtx!.currentTime); // 40% feedback
+        if (this.state.delay.feedback > 0) {
+          console.log("feedback is: " + this.state.delay.feedback);
+          const delayNode = this.audioCtx!.createDelay(1.0); // Maximum delay of 5 seconds
+          delayNode.delayTime.setValueAtTime(this.state.delay.time, this.audioCtx!.currentTime); // 300ms delay
+          const feedbackGain = this.audioCtx!.createGain();
+          feedbackGain.gain.setValueAtTime(this.state.delay.feedback, this.audioCtx!.currentTime); // 40% feedback
+          delayNode.connect(feedbackGain);
+          feedbackGain.connect(delayNode);
+          gainNode.connect(delayNode);
+          delayNode.connect(this.audioCtx!.destination);
+        }
 
         // Connect nodes: oscillator -> gain -> delay -> destination
         oscillator.connect(gainNode);
-        gainNode.connect(delayNode);
-        delayNode.connect(this.audioCtx!.destination);
 
         // Create feedback loop
-        delayNode.connect(feedbackGain);
-        feedbackGain.connect(delayNode);
 
         const lfo = this.audioCtx!.createOscillator();
         lfo.type = 'sine';
@@ -210,8 +229,40 @@ export class AudioPlayer {
     }
   }
 
-  public updateMelody(melody: number[][]) {
-    this.melody = melody;
+  public stepEngine(engineMessage: EngineMessage) {
+    const { tag, message } = engineMessage;
+    switch (tag) {
+      case 'bpm':
+        const bpm = JSON.parse(message);
+        this.bpm = bpm;
+        break;
+      case 'delay':
+        const delay = JSON.parse(message);
+        switch (delay.param) {
+          case 'time': this.state.delay.time = delay.value; break;
+          case 'feedback': this.state.delay.feedback = delay.value; break;
+        }
+        break;
+      case 'melody':
+        const melody = JSON.parse(message);
+        this.state.melody = melody;
+        break;
+      case 'audio_command':
+        const command = JSON.parse(message);
+        this.processAudioCommand(command);
+        break;
+      case 'envelope':
+        const envelope = JSON.parse(message);
+        switch (envelope.param) {
+          case 'attack': this.state.envelope.attack = envelope.value; break;
+          case 'decay': this.state.envelope.decay = envelope.value; break;
+          case 'release': this.state.envelope.release = envelope.value; break;
+          case 'sustain': this.state.envelope.sustain = envelope.value; break;
+        }
+        break;
+      default:
+        console.warn(`Unknown message tag: ${tag}`);
+    }
   }
 
   public toggleDrumPatternAt(drum: string, column: number) {
@@ -236,22 +287,5 @@ export class AudioPlayer {
 
   public updateOctave(octave: number) {
     this.octave = octave;
-  }
-
-  public updateAttack(attack: number) {
-    this.attack = attack;
-    console.log("attack is set to " + this.attack)
-  }
-
-  public updateRelease(release: number) {
-    this.release = release;
-  }
-
-  public updateSustain(sustain: number) {
-    this.sustain = sustain;
-  }
-
-  public updateDecay(decay: number) {
-    this.decay = decay;
   }
 }

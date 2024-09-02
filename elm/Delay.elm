@@ -3,6 +3,7 @@ module Delay exposing (..)
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class)
 import Knob
+import SoundEngineController
 
 
 
@@ -18,8 +19,8 @@ type alias Model =
 
 init : Model
 init =
-    { time = Knob.init 0 100 50 50
-    , feedback = Knob.init 0 100 30 30
+    { time = Knob.init 0.9 0.05 1 0.01
+    , feedback = Knob.init 0 0 0.9 0.01
     , mix = Knob.init 0 100 20 20
     }
 
@@ -59,15 +60,34 @@ update msg model =
             let
                 ( newKnob, maybeValue ) =
                     Knob.update knobMsg model.time
+
+                newModel =
+                    { model | time = newKnob }
+
+                cmd =
+                    case maybeValue of
+                        Just value ->
+                            SoundEngineController.stepEngine (SoundEngineController.encode_delay "time" value)
+
+                        Nothing ->
+                            Cmd.none
             in
-            ( { model | time = newKnob }, Cmd.none )
+            ( newModel, cmd )
 
         FeedbackMsg knobMsg ->
             let
                 ( newKnob, maybeValue ) =
                     Knob.update knobMsg model.feedback
+
+                cmd =
+                    case maybeValue of
+                        Just value ->
+                            SoundEngineController.stepEngine (SoundEngineController.encode_delay "feedback" value)
+
+                        Nothing ->
+                            Cmd.none
             in
-            ( { model | feedback = newKnob }, Cmd.none )
+            ( { model | feedback = newKnob }, cmd )
 
         MixMsg knobMsg ->
             let

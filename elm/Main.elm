@@ -44,20 +44,6 @@ init _ =
 -- VIEW
 
 
-generateWavePoints : Int -> Float -> Float -> String
-generateWavePoints width amplitude frequency =
-    List.range 0 width
-        |> List.map
-            (\x ->
-                let
-                    y =
-                        amplitude * sin (frequency * toFloat x * pi / 180)
-                in
-                String.fromInt x ++ "," ++ String.fromFloat (100 - y)
-            )
-        |> String.join " "
-
-
 view : Model -> Html Msg
 view model =
     div [ class "root" ]
