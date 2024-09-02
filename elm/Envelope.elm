@@ -43,9 +43,9 @@ view model =
                     [ Html.map AttackMsg (Knob.view 30 model.attack)
                     , text "Attack"
                     ]
-                , div [ class "envelopeknob" ] [ Html.map DecayMsg (Knob.view 30 model.decay), text "Decay" ]
-                , div [ class "envelopeknob" ] [ Html.map SustainMsg (Knob.view 30 model.sustain), text "Sustain" ]
-                , div [ class "envelopeknob" ] [ Html.map ReleaseMsg (Knob.view 30 model.release), text "Release" ]
+                , div [ class "labeledknob" ] [ Html.map DecayMsg (Knob.view 30 model.decay), text "Decay" ]
+                , div [ class "labeledknob" ] [ Html.map SustainMsg (Knob.view 30 model.sustain), text "Sustain" ]
+                , div [ class "labeledknob" ] [ Html.map ReleaseMsg (Knob.view 30 model.release), text "Release" ]
                 ]
             ]
         ]

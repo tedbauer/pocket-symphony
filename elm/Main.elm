@@ -2,6 +2,7 @@ port module Main exposing (..)
 
 import Browser
 import ControlBar
+import Delay
 import DrumMachine
 import Envelope
 import Html exposing (..)
@@ -13,7 +14,13 @@ import Sequencer
 
 
 type alias Model =
-    { controlBar : ControlBar.Model, sequencer : Sequencer.Model, drumMachine : DrumMachine.Model, lfo : Lfo.Model, envelope : Envelope.Model }
+    { controlBar : ControlBar.Model
+    , sequencer : Sequencer.Model
+    , drumMachine : DrumMachine.Model
+    , lfo : Lfo.Model
+    , envelope : Envelope.Model
+    , delay : Delay.Model
+    }
 
 
 
@@ -27,6 +34,7 @@ init _ =
       , drumMachine = DrumMachine.init
       , lfo = Lfo.init
       , envelope = Envelope.init
+      , delay = Delay.init
       }
     , Cmd.none
     )
@@ -60,11 +68,7 @@ view model =
             , div [ class "cardrow" ]
                 [ Html.map SequencerMsg (Sequencer.view model.sequencer)
                 , Html.map EnvelopeMsg (Envelope.view model.envelope)
-                , div [ class "card" ]
-                    [ div
-                        [ class "cardtitle" ]
-                        [ text "🔊 Delay" ]
-                    ]
+                , Html.map DelayMsg (Delay.view model.delay)
                 ]
             , div [ class "cardrow" ]
                 [ Html.map LfoMsg (Lfo.view model.lfo)
@@ -85,6 +89,7 @@ type Msg
     | DrumMachineMsg DrumMachine.Msg
     | EnvelopeMsg Envelope.Msg
     | LfoMsg Lfo.Msg
+    | DelayMsg Delay.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -135,6 +140,13 @@ update msg model =
             in
             ( { model | envelope = subModel }, Cmd.map EnvelopeMsg subCmd )
 
+        DelayMsg delayMsg ->
+            let
+                ( subModel, subCmd ) =
+                    Delay.update delayMsg model.delay
+            in
+            ( { model | delay = subModel }, Cmd.map DelayMsg subCmd )
+
 
 
 -- SUBSCRIPTIONS
@@ -143,11 +155,11 @@ update msg model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ receiveCurrentStepUpdate
-            SetCurrentStep
+        [ receiveCurrentStepUpdate SetCurrentStep
         , Sub.map ControlBarMsg (ControlBar.subscriptions model.controlBar)
         , Sub.map EnvelopeMsg (Envelope.subscriptions model.envelope)
         , Sub.map LfoMsg (Lfo.subscriptions model.lfo)
+        , Sub.map DelayMsg (Delay.subscriptions model.delay)
         ]
 
 

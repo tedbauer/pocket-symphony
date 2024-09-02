@@ -73,8 +73,8 @@ view model =
                     ]
                 ]
             , div [ class "lfoparams" ]
-                [ Html.map FrequencyMsg (Knob.view 30 model.frequency)
-                , Html.map IntensityMsg (Knob.view 30 model.intensity)
+                [ div [ class "labeledknob" ] [ Html.map FrequencyMsg (Knob.view 30 model.frequency), text "Freq" ]
+                , div [ class "labeledknob" ] [ Html.map IntensityMsg (Knob.view 30 model.intensity), text "Intensity" ]
                 ]
             ]
         ]

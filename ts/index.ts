@@ -45,10 +45,10 @@ export class AudioPlayer {
     this.intervalIds = [];
     this.audioCtx!;
 
-    this.attack = 0;  // 20 milliseconds
-    this.decay = 0.1;    // 100 milliseconds
-    this.sustain = 0.02;  // 60% of peak volume
-    this.release = 0.001; // 150 milliseconds
+    this.attack = 0;
+    this.decay = 0.1;
+    this.sustain = 0.02;
+    this.release = 0.001;
   }
 
   private playKick() {
@@ -128,7 +128,23 @@ export class AudioPlayer {
         const oscillator = this.audioCtx!.createOscillator();
         oscillator.type = this.wave;
         oscillator.frequency.setValueAtTime(frequency * 2 ** this.octave, this.audioCtx!.currentTime);
+
+        // Create delay node
+        const delayNode = this.audioCtx!.createDelay(1.0); // Maximum delay of 5 seconds
+        delayNode.delayTime.setValueAtTime(0.9, this.audioCtx!.currentTime); // 300ms delay
+
+        // Create feedback gain node
+        const feedbackGain = this.audioCtx!.createGain();
+        feedbackGain.gain.setValueAtTime(0.4, this.audioCtx!.currentTime); // 40% feedback
+
+        // Connect nodes: oscillator -> gain -> delay -> destination
         oscillator.connect(gainNode);
+        gainNode.connect(delayNode);
+        delayNode.connect(this.audioCtx!.destination);
+
+        // Create feedback loop
+        delayNode.connect(feedbackGain);
+        feedbackGain.connect(delayNode);
 
         const lfo = this.audioCtx!.createOscillator();
         lfo.type = 'sine';
