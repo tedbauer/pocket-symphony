@@ -303,7 +303,13 @@ body {
 
 .maintitle {
     margin-left: auto;
+    display: flex;
+    gap: 3px;
+}
 
+.versionlabel {
+    font-size: 8px;
+    align-self: flex-end;
 }
 
 .controlbar {
@@ -320,5 +326,21 @@ body {
 .labeledknob {
     align-items: center;
     justify-content: center;
+    text-align: center;
+}
+
+.delayparams {
+    margin-top: 35px;
+    display: block;
+}
+
+.labeledknob-horizontal {
+    font-size: 13px;
+    display: flex;
+    margin: 0px;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
+    justify-content: left;
     text-align: center;
 }

@@ -41,7 +41,7 @@ view model =
             , div
                 [ class "tempocontrol" ]
                 [ text "Tempo", Html.map BpmMessage (Knob.view 20 model.bpm) ]
-            , div [ class "maintitle" ] [ text "🎼 Pocket Symphony" ]
+            , div [ class "maintitle" ] [ text "🎼 Pocket Symphony", div [ class "versionlabel" ] [ text "v1.0.0" ] ]
             ]
         ]
 
