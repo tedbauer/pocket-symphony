@@ -67,7 +67,8 @@ export class AudioPlayer {
     this.audioCtx!;
   }
 
-  private playKick() {
+  private playKick(currentChordNumber: number) {
+    console.log("playing kick at " + currentChordNumber);
     const kickGain = this.audioCtx!.createGain();
     kickGain.gain.setValueAtTime(1, this.audioCtx!.currentTime);
     kickGain.connect(this.audioCtx!.destination);
@@ -79,11 +80,11 @@ export class AudioPlayer {
     oscillator.connect(kickGain)
     oscillator.frequency.exponentialRampToValueAtTime(0.01, this.audioCtx!.currentTime + 0.5);
 
-    oscillator.start(this.currentChord * this.bpm / 1000);
-    oscillator.stop((this.currentChord * this.bpm / 1000) + 0.2);
+    oscillator.start(currentChordNumber * this.bpm / 1000);
+    oscillator.stop((currentChordNumber * this.bpm / 1000) + 0.2);
   }
 
-  private playSnare() {
+  private playSnare(currentChordNumber: number) {
     const bufferSize = this.audioCtx!.sampleRate * 0.2;
     const buffer = this.audioCtx!.createBuffer(1, bufferSize, this.audioCtx!.sampleRate);
     const output = buffer.getChannelData(0);
@@ -101,10 +102,10 @@ export class AudioPlayer {
 
     source.connect(snareGain);
     snareGain.connect(this.audioCtx!.destination);
-    source.start(this.currentChord * this.bpm / 1000);
+    source.start(currentChordNumber * this.bpm / 1000);
   }
 
-  private playHihat() {
+  private playHihat(currentChordNumber: number) {
     const bufferSize = this.audioCtx!.sampleRate * 0.1;
     const buffer = this.audioCtx!.createBuffer(1, bufferSize, this.audioCtx!.sampleRate);
     const output = buffer.getChannelData(0);
@@ -122,18 +123,20 @@ export class AudioPlayer {
 
     source.connect(hihatGain);
     hihatGain.connect(this.audioCtx!.destination);
-    source.start(this.currentChord * this.bpm / 1000);
+    source.start(currentChordNumber * this.bpm / 1000);
   }
 
-  private invokeInterval() {
+  private invokeInterval(currentChordNumberStart: number) {
     const lookahead = 75;
     const interval = 50;
 
-    while (this.playing && this.currentChord * this.bpm < (this.audioCtx!.currentTime * 1000) + lookahead) {
-      let chord: number[] = this.state.melody[this.currentChord % 8];
+    let currentChordNumber = currentChordNumberStart;
+
+    while (this.playing && currentChordNumber * this.bpm < (this.audioCtx!.currentTime * 1000) + lookahead) {
+      let chord: number[] = this.state.melody[currentChordNumber % 8];
       chord.forEach((frequency) => {
         const gainNode = this.audioCtx!.createGain();
-        const startTime = this.currentChord * this.bpm / 1000;
+        const startTime = currentChordNumber * this.bpm / 1000;
         gainNode.gain.setValueAtTime(0, startTime);
         gainNode.gain.linearRampToValueAtTime(0.8, startTime + this.state.envelope.attack);
         gainNode.gain.linearRampToValueAtTime(this.state.envelope.sustain * 0.8, startTime + this.state.envelope.attack + this.state.envelope.decay);
@@ -145,11 +148,8 @@ export class AudioPlayer {
         oscillator.type = this.wave;
         oscillator.frequency.setValueAtTime(frequency * 2 ** this.octave, this.audioCtx!.currentTime);
 
-        // Create delay node
 
-        // Create feedback gain node
         if (this.state.delay.feedback > 0) {
-          console.log("feedback is: " + this.state.delay.feedback);
           const delayNode = this.audioCtx!.createDelay(1.0); // Maximum delay of 5 seconds
           delayNode.delayTime.setValueAtTime(this.state.delay.time, this.audioCtx!.currentTime); // 300ms delay
           const feedbackGain = this.audioCtx!.createGain();
@@ -160,10 +160,7 @@ export class AudioPlayer {
           delayNode.connect(this.audioCtx!.destination);
         }
 
-        // Connect nodes: oscillator -> gain -> delay -> destination
         oscillator.connect(gainNode);
-
-        // Create feedback loop
 
         const lfo = this.audioCtx!.createOscillator();
         lfo.type = 'sine';
@@ -175,31 +172,31 @@ export class AudioPlayer {
         lfo.connect(lfoGain);
         lfoGain.connect(oscillator.frequency);
 
-        oscillator.start(this.currentChord * this.bpm / 1000);
-        oscillator.stop((this.currentChord * this.bpm / 1000) + 0.2);
+        oscillator.start(currentChordNumber * this.bpm / 1000);
+        oscillator.stop((currentChordNumber * this.bpm / 1000) + 0.2);
         // oscillator.stop((this.currentChord * this.bpm / 1000) + 1);
         lfo.start();
       })
 
-      if (this.drumPatterns.get("kick")![this.currentChord % 16]) {
-        this.playKick();
+      if (this.drumPatterns.get("kick")![currentChordNumber % 16]) {
+        this.playKick(currentChordNumber);
       }
 
-      if (this.drumPatterns.get("snare")![this.currentChord % 16]) {
-        this.playSnare();
+      if (this.drumPatterns.get("snare")![currentChordNumber % 16]) {
+        this.playSnare(currentChordNumber);
       }
 
-      if (this.drumPatterns.get("hihat")![this.currentChord % 16]) {
-        this.playHihat();
+      if (this.drumPatterns.get("hihat")![currentChordNumber % 16]) {
+        this.playHihat(currentChordNumber);
       }
 
-      this.viewUpdateCallback(this.currentChord);
-      this.currentChord += 1;
+      this.viewUpdateCallback(currentChordNumber);
+      currentChordNumber += 1;
     }
 
-    if (this.playing) {
-      this.intervalIds.push(setTimeout(() => { this.invokeInterval() }, interval));
-    }
+    //if (this.playing) {
+    this.intervalIds.push(setTimeout(() => { this.invokeInterval(currentChordNumber) }, interval));
+    //}
   }
 
   private clearIntervals() {
@@ -214,11 +211,17 @@ export class AudioPlayer {
         this.audioCtx = new AudioContext();
       }
 
+      this.audioCtx!.close();
+      this.audioCtx = new AudioContext();
+
       this.playing = true;
-      this.invokeInterval();
+      this.invokeInterval(this.currentChord);
     } else if (audioCommand === "pause") {
       this.playing = false;
       this.clearIntervals();
+
+      this.audioCtx!.close();
+      this.audioCtx! = new AudioContext();
     } else if (audioCommand === "reset") {
       this.playing = false;
       this.clearIntervals();

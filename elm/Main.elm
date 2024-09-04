@@ -96,7 +96,15 @@ update msg model =
                 ( subModel, subCmd ) =
                     ControlBar.update controlBarMsg model.controlBar
             in
-            ( { model | controlBar = subModel }, Cmd.map ControlBarMsg subCmd )
+            let
+                ( updatedSequencer, _ ) =
+                    Sequencer.update (Sequencer.SetCurrentStep subModel.activeStep) model.sequencer
+            in
+            let
+                ( updatedDrumMachine, _ ) =
+                    DrumMachine.update (DrumMachine.SetCurrentStep subModel.activeStep) model.drumMachine
+            in
+            ( { model | controlBar = subModel, sequencer = updatedSequencer, drumMachine = updatedDrumMachine }, Cmd.map ControlBarMsg subCmd )
 
         DrumMachineMsg drumMachineMsg ->
             let
