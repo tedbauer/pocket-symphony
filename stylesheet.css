@@ -30,6 +30,15 @@
     box-shadow: black 5px 5px;
 }
 
+.cardnofill {
+    margin: 4px;
+    font-size: 10px;
+    border-width: 1px;
+    border-radius: 10px;
+    padding: 10px;
+    font-family: 'Merriweather', serif;
+}
+
 .note {
     border-style: solid;
     margin: 5px;
@@ -343,4 +352,8 @@ body {
     align-items: center;
     justify-content: left;
     text-align: center;
+}
+
+.animals {
+    margin-left: 15px;
 }

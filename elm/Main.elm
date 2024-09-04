@@ -60,6 +60,8 @@ view model =
                 [ Html.map LfoMsg (Lfo.view model.lfo)
                 , Html.map DrumMachineMsg (DrumMachine.view model.drumMachine)
                 ]
+            , div [ class "cardrow" ]
+                [ div [ class "cardnofill" ] [ div [ class "parambutton" ] [ a [ href "https://github.com/tedbauer/sequencer/issues/new/choose" ] [ text "Report an issue" ] ] ] ]
             ]
         ]
 
@@ -88,8 +90,11 @@ update msg model =
 
                 ( updatedSequencer, _ ) =
                     Sequencer.update (Sequencer.SetCurrentStep step) model.sequencer
+
+                ( updatedControlBar, _ ) =
+                    ControlBar.update (ControlBar.SetCurrentStep step) model.controlBar
             in
-            ( { model | drumMachine = updatedDrumMachine, sequencer = updatedSequencer }, Cmd.none )
+            ( { model | drumMachine = updatedDrumMachine, sequencer = updatedSequencer, controlBar = updatedControlBar }, Cmd.none )
 
         ControlBarMsg controlBarMsg ->
             let

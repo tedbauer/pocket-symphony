@@ -41,9 +41,22 @@ view model =
             , div
                 [ class "tempocontrol" ]
                 [ text "Tempo", Html.map BpmMessage (Knob.view 20 model.bpm) ]
+            , div [ class "animals" ] [ text (animals model) ]
             , div [ class "maintitle" ] [ text "🎼 Pocket Symphony", div [ class "versionlabel" ] [ text "v1.0.0" ] ]
             ]
         ]
+
+
+animals : Model -> String
+animals model =
+    if modBy 8 model.activeStep == 0 then
+        "🦅\u{1FABF}🦏"
+
+    else if modBy 4 model.activeStep == 0 then
+        "\u{1FABF}🦏🦅"
+
+    else
+        "🦏🦅\u{1FABF}"
 
 
 
@@ -56,6 +69,7 @@ type Msg
     | Pause
     | Reset
     | ProcessKeyboardEvent KeyboardEvent
+    | SetCurrentStep Int
 
 
 processKeyboardEvent : KeyboardEvent -> Model -> ( Model, Cmd Msg )
@@ -112,6 +126,9 @@ update msg model =
 
         ProcessKeyboardEvent event ->
             processKeyboardEvent event model
+
+        SetCurrentStep step ->
+            ( { model | activeStep = step }, Cmd.none )
 
 
 
