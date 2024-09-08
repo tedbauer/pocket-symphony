@@ -199,12 +199,6 @@ sequencerCard model =
                 , chordView 6 model
                 , chordView 7 model
                 ]
-            , div [ class "seqctrl" ]
-                [ div [ class "parambutton", onMouseDown (SetOctave (model.octave + 1)) ] [ text "⬆️" ]
-                , div [ class "parambutton", onMouseDown (SetOctave (model.octave - 1)) ] [ text "⬇️" ]
-                , text "Octave: "
-                , text (toString model.octave)
-                ]
             ]
         ]
 

@@ -38,4 +38,25 @@ encode_envelope param value =
     }
 
 
+encode_lfo_frequency : Float -> EngineMessage
+encode_lfo_frequency freq =
+    { tag = "lfo"
+    , message = Encode.encode 0 (Encode.object [ ( "param", Encode.string "frequency" ), ( "value", Encode.float freq ) ])
+    }
+
+
+encode_lfo_intensity : Float -> EngineMessage
+encode_lfo_intensity intensity =
+    { tag = "lfo"
+    , message = Encode.encode 0 (Encode.object [ ( "param", Encode.string "intensity" ), ( "value", Encode.float intensity ) ])
+    }
+
+
+encode_lfo_wave_type : String -> EngineMessage
+encode_lfo_wave_type waveType =
+    { tag = "lfo"
+    , message = Encode.encode 0 (Encode.object [ ( "param", Encode.string "waveType" ), ( "value", Encode.string waveType ) ])
+    }
+
+
 port stepEngine : EngineMessage -> Cmd msg

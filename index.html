@@ -37,17 +37,35 @@
       audioPlayer.updateWave(wave);
     });
 
-    app.ports.transmitLfoFrequency.subscribe(function (lfoFrequency) {
-      audioPlayer.updateLfoFrequency(lfoFrequency);
-    });
-
-    app.ports.transmitLfoIntensity.subscribe(function (lfoIntensity) {
-      audioPlayer.updateLfoIntensity(lfoIntensity);
-    });
-
     app.ports.transmitOctave.subscribe(function (octave) {
       audioPlayer.updateOctave(octave);
     });
 
+    document.addEventListener('DOMContentLoaded', function () {
+      const knobs = document.querySelectorAll('.knob');
+      let isDragging = false;
+
+      knobs.forEach(knob => {
+        knob.addEventListener('mousedown', function () {
+          isDragging = true;
+          document.body.style.cursor = 'ns-resize';
+          document.body.classList.add('no-select');
+        });
+      });
+
+      document.addEventListener('mouseup', function () {
+        if (isDragging) {
+          isDragging = false;
+          document.body.style.cursor = 'default';
+          document.body.classList.remove('no-select');
+        }
+      });
+
+      document.addEventListener('mousemove', function (event) {
+        if (isDragging) {
+          document.body.style.cursor = 'ns-resize';
+        }
+      });
+    });
   </script>
 </body>

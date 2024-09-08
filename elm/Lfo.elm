@@ -1,16 +1,25 @@
-port module Lfo exposing (..)
+module Lfo exposing (..)
 
-import Html exposing (Html, div, li, text, ul)
-import Html.Attributes exposing (class, height, width)
-import Html.Events exposing (onMouseDown)
+import Html exposing (Html, div, li, option, select, text, ul)
+import Html.Attributes exposing (class, height, value, width)
+import Html.Events exposing (onInput, onMouseDown)
 import Knob
+import SoundEngineController
 import Svg exposing (line, svg)
 import Svg.Attributes
+
+
+type WaveType
+    = Sine
+    | Square
+    | Sawtooth
+    | Triangle
 
 
 type alias Model =
     { frequency : Knob.Model
     , intensity : Knob.Model
+    , waveType : WaveType
     }
 
 
@@ -22,6 +31,7 @@ init : Model
 init =
     { frequency = Knob.init 1 0 50 0.1
     , intensity = Knob.init 1 0 200 0.1
+    , waveType = Sine
     }
 
 
@@ -29,14 +39,29 @@ init =
 -- VIEW
 
 
-generateWavePoints : Int -> Float -> Float -> String
-generateWavePoints width amplitude frequency =
+generateWavePoints : Int -> Float -> Float -> WaveType -> String
+generateWavePoints width amplitude frequency waveType =
     List.range 0 width
         |> List.map
             (\x ->
                 let
                     y =
-                        amplitude * sin (frequency * toFloat x * pi / 180)
+                        case waveType of
+                            Sine ->
+                                amplitude * sin (frequency * toFloat x * pi / 180)
+
+                            Square ->
+                                if sin (frequency * toFloat x * pi / 180) >= 0 then
+                                    amplitude
+
+                                else
+                                    -amplitude
+
+                            Sawtooth ->
+                                amplitude * (2 * ((frequency * toFloat x / 360) - toFloat (floor (frequency * toFloat x / 360))) - 1)
+
+                            Triangle ->
+                                amplitude * (2 * abs (2 * ((frequency * toFloat x / 360) - toFloat (floor (frequency * toFloat x / 360 + 0.5)))) - 1)
                 in
                 String.fromInt x ++ "," ++ String.fromFloat (100 - y)
             )
@@ -64,7 +89,7 @@ view model =
                         ]
                         []
                     , Svg.polyline
-                        [ Svg.Attributes.points (generateWavePoints 400 model.intensity.value model.frequency.value)
+                        [ Svg.Attributes.points (generateWavePoints 400 model.intensity.value model.frequency.value model.waveType)
                         , Svg.Attributes.fill "none"
                         , Svg.Attributes.stroke "purple"
                         , Svg.Attributes.strokeWidth "5"
@@ -73,8 +98,17 @@ view model =
                     ]
                 ]
             , div [ class "lfoparams" ]
-                [ div [ class "labeledknob" ] [ Html.map FrequencyMsg (Knob.view 30 model.frequency), text "Freq" ]
-                , div [ class "labeledknob" ] [ Html.map IntensityMsg (Knob.view 30 model.intensity), text "Intensity" ]
+                [ div [ class "paramrow" ]
+                    [ div [ class "labeledknob" ] [ Html.map FrequencyMsg (Knob.view 30 model.frequency), text "Freq" ]
+                    , div [ class "labeledknob" ] [ Html.map IntensityMsg (Knob.view 30 model.intensity), text "Intensity" ]
+                    ]
+                , div [ class "paramrow" ]
+                    [ select [ class "wave-type-select", onInput WaveTypeChanged ]
+                        [ option [ value "sine" ] [ text "Sine" ]
+                        , option [ value "square" ] [ text "Square" ]
+                        , option [ value "sawtooth" ] [ text "Sawtooth" ]
+                        ]
+                    ]
                 ]
             ]
         ]
@@ -87,6 +121,7 @@ view model =
 type Msg
     = FrequencyMsg Knob.Msg
     | IntensityMsg Knob.Msg
+    | WaveTypeChanged String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -97,14 +132,42 @@ update msg model =
                 ( newKnob, maybeValue ) =
                     Knob.update knobMsg model.frequency
             in
-            ( { model | frequency = newKnob }, maybeValue |> Maybe.map transmitLfoFrequency |> Maybe.withDefault Cmd.none )
+            ( { model | frequency = newKnob }
+            , maybeValue
+                |> Maybe.map (\value -> SoundEngineController.stepEngine (SoundEngineController.encode_lfo_frequency value))
+                |> Maybe.withDefault Cmd.none
+            )
 
         IntensityMsg knobMsg ->
             let
                 ( newKnob, maybeValue ) =
                     Knob.update knobMsg model.intensity
             in
-            ( { model | intensity = newKnob }, maybeValue |> Maybe.map transmitLfoIntensity |> Maybe.withDefault Cmd.none )
+            ( { model | intensity = newKnob }
+            , maybeValue
+                |> Maybe.map (\value -> SoundEngineController.stepEngine (SoundEngineController.encode_lfo_intensity value))
+                |> Maybe.withDefault Cmd.none
+            )
+
+        WaveTypeChanged waveTypeString ->
+            let
+                newWaveType =
+                    case waveTypeString of
+                        "square" ->
+                            Square
+
+                        "sawtooth" ->
+                            Sawtooth
+
+                        "triangle" ->
+                            Triangle
+
+                        _ ->
+                            Sine
+            in
+            ( { model | waveType = newWaveType }
+            , SoundEngineController.stepEngine (SoundEngineController.encode_lfo_wave_type waveTypeString)
+            )
 
 
 
@@ -120,13 +183,3 @@ subscriptions model =
             IntensityMsg
             (Knob.subscriptions model.intensity)
         ]
-
-
-
--- PORTS
-
-
-port transmitLfoFrequency : Float -> Cmd msg
-
-
-port transmitLfoIntensity : Float -> Cmd msg

@@ -11,6 +11,11 @@ type EngineState = {
     decay: number,
     sustain: number,
     release: number,
+  },
+  lfo: {
+    frequency: number,
+    intensity: number,
+    wave: OscillatorType,
   }
 }
 
@@ -28,9 +33,6 @@ export class AudioPlayer {
 
   private wave: any = "sine";
 
-  private lfoFrequency: number;
-  private lfoIntensity: number;
-
   private octave: number;
   private state: EngineState;
 
@@ -43,6 +45,11 @@ export class AudioPlayer {
         decay: 0.1,
         sustain: 0.02,
         release: 0.001
+      },
+      lfo: {
+        frequency: 10,
+        intensity: 9,
+        wave: 'sine'
       }
     };
 
@@ -51,9 +58,6 @@ export class AudioPlayer {
     this.currentChord = 0;
     this.playing = false;
     this.bpm = 200;
-
-    this.lfoFrequency = 10;
-    this.lfoIntensity = 9;
 
     this.octave = 0;
 
@@ -163,11 +167,12 @@ export class AudioPlayer {
         oscillator.connect(gainNode);
 
         const lfo = this.audioCtx!.createOscillator();
-        lfo.type = 'sine';
-        lfo.frequency.setValueAtTime(this.lfoFrequency, this.audioCtx!.currentTime);
+        console.log(this.state.lfo.wave);
+        lfo.type = this.state.lfo.wave;
+        lfo.frequency.setValueAtTime(this.state.lfo.frequency, this.audioCtx!.currentTime);
 
         const lfoGain = this.audioCtx!.createGain();
-        lfoGain.gain.setValueAtTime(this.lfoIntensity, this.audioCtx!.currentTime);
+        lfoGain.gain.setValueAtTime(this.state.lfo.intensity, this.audioCtx!.currentTime);
 
         lfo.connect(lfoGain);
         lfoGain.connect(oscillator.frequency);
@@ -211,8 +216,10 @@ export class AudioPlayer {
         this.audioCtx = new AudioContext();
       }
 
-      this.audioCtx!.close();
-      this.audioCtx = new AudioContext();
+      if (this.audioCtx !== null) {
+        this.audioCtx!.close();
+        this.audioCtx = new AudioContext();
+      }
 
       this.playing = true;
       this.invokeInterval(this.currentChord);
@@ -220,15 +227,19 @@ export class AudioPlayer {
       this.playing = false;
       this.clearIntervals();
 
-      this.audioCtx!.close();
-      this.audioCtx! = new AudioContext();
+      if (this.audioCtx !== null) {
+        this.audioCtx!.close();
+        this.audioCtx! = new AudioContext();
+      }
     } else if (audioCommand === "reset") {
       this.playing = false;
       this.clearIntervals();
       this.currentChord = 0;
 
-      this.audioCtx!.close();
-      this.audioCtx! = new AudioContext();
+      if (this.audioCtx !== null) {
+        this.audioCtx!.close();
+        this.audioCtx! = new AudioContext();
+      }
     }
   }
 
@@ -263,6 +274,18 @@ export class AudioPlayer {
           case 'sustain': this.state.envelope.sustain = envelope.value; break;
         }
         break;
+      case 'lfo':
+        const lfo = JSON.parse(message);
+        console.log(message);
+        switch (lfo.param) {
+          case 'frequency': this.state.lfo.frequency = lfo.value; break;
+          case 'intensity': this.state.lfo.intensity = lfo.value; break;
+          case 'waveType': {
+            this.state.lfo.wave = lfo.value as OscillatorType;
+            console.log("set wave to " + this.state.lfo.wave);
+          }
+        }
+        break;
       default:
         console.warn(`Unknown message tag: ${tag}`);
     }
@@ -278,14 +301,6 @@ export class AudioPlayer {
 
   public updateBpm(bpm: number) {
     this.bpm = bpm;
-  }
-
-  public updateLfoFrequency(freq: number) {
-    this.lfoFrequency = freq;
-  }
-
-  public updateLfoIntensity(intensity: number) {
-    this.lfoIntensity = intensity;
   }
 
   public updateOctave(octave: number) {

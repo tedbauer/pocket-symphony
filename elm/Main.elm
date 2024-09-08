@@ -9,6 +9,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onMouseDown)
 import Lfo
+import Oscillator
 import Platform.Cmd as Cmd
 import Sequencer
 
@@ -20,6 +21,7 @@ type alias Model =
     , lfo : Lfo.Model
     , envelope : Envelope.Model
     , delay : Delay.Model
+    , oscillator : Oscillator.Model
     }
 
 
@@ -35,6 +37,7 @@ init _ =
       , lfo = Lfo.init
       , envelope = Envelope.init
       , delay = Delay.init
+      , oscillator = Oscillator.init
       }
     , Cmd.none
     )
@@ -53,11 +56,15 @@ view model =
                 ]
             , div [ class "cardrow" ]
                 [ Html.map SequencerMsg (Sequencer.view model.sequencer)
-                , Html.map EnvelopeMsg (Envelope.view model.envelope)
-                , Html.map DelayMsg (Delay.view model.delay)
+                , Html.map EnvelopeMsg
+                    (Envelope.view model.envelope)
+                , Html.map
+                    OscillatorMsg
+                    (Oscillator.view model.oscillator)
                 ]
             , div [ class "cardrow" ]
                 [ Html.map LfoMsg (Lfo.view model.lfo)
+                , Html.map DelayMsg (Delay.view model.delay)
                 , Html.map DrumMachineMsg (DrumMachine.view model.drumMachine)
                 ]
             , div [ class "cardrow" ]
@@ -78,6 +85,7 @@ type Msg
     | EnvelopeMsg Envelope.Msg
     | LfoMsg Lfo.Msg
     | DelayMsg Delay.Msg
+    | OscillatorMsg Oscillator.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -145,6 +153,13 @@ update msg model =
                     Delay.update delayMsg model.delay
             in
             ( { model | delay = subModel }, Cmd.map DelayMsg subCmd )
+
+        OscillatorMsg oscillatorMsg ->
+            let
+                ( subModel, subCmd ) =
+                    Oscillator.update oscillatorMsg model.oscillator
+            in
+            ( { model | oscillator = subModel }, Cmd.map OscillatorMsg subCmd )
 
 
 

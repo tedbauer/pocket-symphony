@@ -54,31 +54,92 @@ view model =
 
 graph : Float -> Float -> Float -> Float -> Html Msg
 graph attack decay sustain release =
+    let
+        points =
+            generateWavePoints attack decay sustain release
+
+        pointsList =
+            String.split " " points
+
+        xOffset =
+            20
+
+        yOffset =
+            40
+
+        -- Increased vertical offset
+    in
     div [ class "graph" ]
         [ svg
-            [ width 150
+            [ width 200
             , height 100
-            , Svg.Attributes.viewBox "0 0 400 200"
+            , Svg.Attributes.viewBox ("0 0 " ++ String.fromInt (500 + xOffset) ++ " " ++ String.fromInt (200 + yOffset))
             ]
-            [ Svg.polyline
-                [ Svg.Attributes.points (generateWavePoints attack decay sustain release)
-                , Svg.Attributes.fill "none"
-                , Svg.Attributes.stroke "purple"
-                , Svg.Attributes.strokeWidth "2"
+            [ Svg.g [ Svg.Attributes.transform ("translate(" ++ String.fromInt xOffset ++ ", " ++ String.fromInt yOffset ++ ")") ]
+                [ Svg.polyline
+                    [ Svg.Attributes.points points
+                    , Svg.Attributes.fill "none"
+                    , Svg.Attributes.stroke "purple"
+                    , Svg.Attributes.strokeWidth "2"
+                    ]
+                    []
+                , Svg.g [] (List.map drawPoint pointsList)
+
+                -- X-axis line
+                , Svg.line
+                    [ Svg.Attributes.x1 "0"
+                    , Svg.Attributes.y1 "180"
+                    , Svg.Attributes.x2 "500"
+                    , Svg.Attributes.y2 "180"
+                    , Svg.Attributes.stroke "black"
+                    , Svg.Attributes.strokeWidth "1"
+                    ]
+                    []
+                ]
+
+            -- Y-axis line (moved to the left edge of the graph)
+            , Svg.line
+                [ Svg.Attributes.x1 (String.fromInt xOffset)
+                , Svg.Attributes.y1 (String.fromInt yOffset)
+                , Svg.Attributes.x2 (String.fromInt xOffset)
+                , Svg.Attributes.y2 (String.fromInt (180 + yOffset))
+                , Svg.Attributes.stroke "black"
+                , Svg.Attributes.strokeWidth "1"
                 ]
                 []
             ]
         ]
 
 
+drawPoint : String -> Svg.Svg Msg
+drawPoint point =
+    let
+        coordinates =
+            String.split "," point
+
+        x =
+            Maybe.withDefault "0" (List.head coordinates)
+
+        y =
+            Maybe.withDefault "0" (List.head (List.drop 1 coordinates))
+    in
+    Svg.circle
+        [ Svg.Attributes.cx x
+        , Svg.Attributes.cy y
+        , Svg.Attributes.r "5"
+        , Svg.Attributes.fill "purple"
+        ]
+        []
+
+
 generateWavePoints : Float -> Float -> Float -> Float -> String
 generateWavePoints attack decay sustain release =
     let
         width =
-            400
+            500
 
-        maxValue =
-            150
+        height =
+            180
 
         attackEnd =
             attack * width
@@ -87,17 +148,20 @@ generateWavePoints attack decay sustain release =
             attackEnd + decay * width
 
         sustainEnd =
-            decayEnd + ((1 - sustain) * width)
+            decayEnd + sustain * width
 
         releaseEnd =
             sustainEnd + release * width
+
+        sustainLevel =
+            height - (sustain * height)
     in
     String.join " "
-        [ String.fromFloat 0 ++ "," ++ String.fromFloat maxValue
-        , String.fromFloat attackEnd ++ "," ++ String.fromFloat maxValue
-        , String.fromFloat decayEnd ++ "," ++ String.fromFloat (sustain * maxValue)
-        , String.fromFloat sustainEnd ++ "," ++ String.fromFloat (sustain * maxValue)
-        , String.fromFloat releaseEnd ++ "," ++ String.fromFloat 0
+        [ "0," ++ String.fromFloat height
+        , String.fromFloat attackEnd ++ ",0"
+        , String.fromFloat decayEnd ++ "," ++ String.fromFloat sustainLevel
+        , String.fromFloat sustainEnd ++ "," ++ String.fromFloat sustainLevel
+        , String.fromFloat releaseEnd ++ "," ++ String.fromFloat height
         ]
 
 

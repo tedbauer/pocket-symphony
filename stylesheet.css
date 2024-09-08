@@ -181,7 +181,6 @@
     background-color: lightcyan;
 }
 
-
 .drumcell {
     border-style: solid;
     border-width: 0.5px;
@@ -198,13 +197,13 @@
 
 .drumcell[data-enabled="true"] {
     background-color: #6c446e;
-
 }
 
 .drummachine {
     display: flex;
     padding-top: 22px;
     padding-right: 10px;
+    margin-left: -10px;
 }
 
 .drumlabels {
@@ -215,12 +214,10 @@
 
 .drumlabel {
     margin: 7px;
-
 }
 
 .lfo {
     display: flex;
-    width: 250px;
     flex-direction: row;
 }
 
@@ -237,11 +234,19 @@
     align-items: center;
     font-size: 10px;
     display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
 }
 
 .lfoparams ul {
     list-style-type: none;
     padding-left: 15px;
+}
+
+.paramrow {
+    display: flex;
+    flex-direction: row;
 }
 
 .lfoparams li {
@@ -297,8 +302,19 @@ body {
 }
 
 .knob:hover {
-    cursor: pointer;
     background-color: #F9EBF8;
+}
+
+.knob:active {
+    cursor: ns-resize !important;
+}
+
+.knob-active {
+    cursor: ns-resize !important;
+}
+
+body.knob-dragging * {
+    cursor: ns-resize !important;
 }
 
 .knob-pointer {
@@ -339,21 +355,50 @@ body {
 }
 
 .delayparams {
-    margin-top: 35px;
-    display: block;
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-left: -5px;
 }
 
 .labeledknob-horizontal {
-    font-size: 13px;
+    font-size: 11px;
     display: flex;
     margin: 0px;
     flex-direction: row;
-    gap: 10px;
+    gap: 5px;
     align-items: center;
     justify-content: left;
     text-align: center;
 }
 
+.labeledknob-horizontal-thin {
+    font-size: 8px;
+    display: flex;
+    margin: 0px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: left;
+    text-align: center;
+}
+
+.delayparams .knob {
+    transform: scale(0.7);
+    margin: 2px;
+}
+
 .animals {
     margin-left: 15px;
+}
+
+.no-select {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.wave-type-select {
+    font-family: 'Merriweather', serif;
 }
