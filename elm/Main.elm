@@ -174,6 +174,7 @@ subscriptions model =
         , Sub.map EnvelopeMsg (Envelope.subscriptions model.envelope)
         , Sub.map LfoMsg (Lfo.subscriptions model.lfo)
         , Sub.map DelayMsg (Delay.subscriptions model.delay)
+        , Sub.map OscillatorMsg (Oscillator.subscriptions model.oscillator)
         ]
 
 

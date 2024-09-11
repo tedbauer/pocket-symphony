@@ -47,6 +47,7 @@ type Note
     | G
     | A
     | B
+    | LowG
 
 
 
@@ -118,6 +119,9 @@ createNote rowNumber columnNumber model =
                         6 ->
                             Populated A
 
+                        7 ->
+                            Populated LowG
+
                         _ ->
                             Populated A
                 )
@@ -156,11 +160,6 @@ chordView columnNumber model =
             )
         ]
         (createChord 0 8 columnNumber model)
-
-
-displayWave : Model -> String
-displayWave model =
-    stringOfWave model.oscillator.wave
 
 
 stringOfWave : Wave -> String
@@ -277,10 +276,13 @@ chordToFrequencies noteDefinitions =
                         392.0
 
                     Populated A ->
-                        440.0
+                        220.0
 
                     Populated B ->
-                        493.88
+                        246.94
+
+                    Populated LowG ->
+                        196.0
 
                     NotPopulated ->
                         -1.0

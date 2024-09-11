@@ -45,6 +45,34 @@ encode_lfo_frequency freq =
     }
 
 
+encode_oscillator_waveform : String -> EngineMessage
+encode_oscillator_waveform waveform =
+    { tag = "oscillator"
+    , message = Encode.encode 0 (Encode.object [ ( "param", Encode.string "waveform" ), ( "value", Encode.string waveform ) ])
+    }
+
+
+encode_oscillator_coarse_frequency : Float -> EngineMessage
+encode_oscillator_coarse_frequency freq =
+    { tag = "oscillator"
+    , message = Encode.encode 0 (Encode.object [ ( "param", Encode.string "coarseFrequency" ), ( "value", Encode.float freq ) ])
+    }
+
+
+encode_oscillator_fine_frequency : Float -> EngineMessage
+encode_oscillator_fine_frequency freq =
+    { tag = "oscillator"
+    , message = Encode.encode 0 (Encode.object [ ( "param", Encode.string "fineFrequency" ), ( "value", Encode.float freq ) ])
+    }
+
+
+encode_oscillator_octave : Int -> EngineMessage
+encode_oscillator_octave octave =
+    { tag = "oscillator"
+    , message = Encode.encode 0 (Encode.object [ ( "param", Encode.string "octave" ), ( "value", Encode.int octave ) ])
+    }
+
+
 encode_lfo_intensity : Float -> EngineMessage
 encode_lfo_intensity intensity =
     { tag = "lfo"

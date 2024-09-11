@@ -97,6 +97,14 @@
     border-radius: 3px;
 }
 
+.play[data-playing="True"] {
+    background-color: lightcyan;
+}
+
+.pause[data-playing="False"] {
+    background-color: lightcyan;
+}
+
 .reset {
     cursor: pointer;
     display: inline;
@@ -141,6 +149,17 @@
     position: relative;
     top: 10px;
     display: inline-block;
+}
+
+.oscillator-params {
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.osc-wave-selector {
+    margin-left: 7px;
 }
 
 .prevwave {
@@ -278,7 +297,7 @@
     margin-top: 7px;
     border-radius: 3px;
     padding: 5px;
-    background-color: #F9F9F9;
+    font-size: 12px;
     width: fit-content;
 }
 

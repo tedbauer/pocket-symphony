@@ -23,9 +23,9 @@ type alias Model =
 init : Model
 init =
     { attack = Knob.init 0 0 0.19 0.01
-    , sustain = Knob.init 0 0 1 0.01
-    , decay = Knob.init 0 0 0.19 0.01
-    , release = Knob.init 0 0 0.19 0.01
+    , sustain = Knob.init 0.5 0.1 0.55 0.01
+    , decay = Knob.init 0.1 0 0.15 0.01
+    , release = Knob.init 0.05 0 0.1 0.01
     }
 
 

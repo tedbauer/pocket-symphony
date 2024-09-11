@@ -1,16 +1,17 @@
 module Oscillator exposing (..)
 
 import Debug exposing (toString)
-import Html exposing (Html, div, text)
-import Html.Attributes exposing (class)
-import Html.Events exposing (onMouseDown)
+import Html exposing (Html, div, option, select, text)
+import Html.Attributes exposing (class, value)
+import Html.Events exposing (onInput, onMouseDown)
 import Knob
+import SoundEngineController
 
 
 type alias Model =
     { waveform : String
-    , frequency : Knob.Model
-    , detune : Knob.Model
+    , coarseFrequency : Knob.Model
+    , fineFrequency : Knob.Model
     , octave : Int
     }
 
@@ -18,16 +19,16 @@ type alias Model =
 init : Model
 init =
     { waveform = "sine"
-    , frequency = Knob.init 440 20 2000 1
-    , detune = Knob.init 0 -100 100 1
+    , coarseFrequency = Knob.init 0 0 50 0.1
+    , fineFrequency = Knob.init 0 0 50 0.1
     , octave = 0
     }
 
 
 type Msg
     = SetWaveform String
-    | FrequencyMsg Knob.Msg
-    | DetuneMsg Knob.Msg
+    | CoarseFrequencyMsg Knob.Msg
+    | FineFrequencyMsg Knob.Msg
     | SetOctave Int
 
 
@@ -37,21 +38,34 @@ view model =
         [ div [ class "cardtitle" ] [ text "🎵 Oscillator" ]
         , div [ class "oscillator" ]
             [ div [ class "oscillator-params" ]
-                [ div [ class "labeledknob-horizontal" ]
-                    [ Html.map FrequencyMsg (Knob.view 30 model.frequency)
-                    , text "Frequency"
+                [ div [ class "osc-wave-selector" ] [ waveformSelector model.waveform ]
+                , div [ class "seqctrl" ]
+                    [ div [ class "parambutton", onMouseDown (SetOctave (model.octave + 1)) ] [ text "⬆️" ]
+                    , div [ class "parambutton", onMouseDown (SetOctave (model.octave - 1)) ] [ text "⬇️" ]
+                    , text "Octave: "
+                    , text (toString model.octave)
                     ]
                 , div [ class "labeledknob-horizontal" ]
-                    [ Html.map DetuneMsg (Knob.view 30 model.detune)
-                    , text "Detune"
+                    [ Html.map CoarseFrequencyMsg (Knob.view 30 model.coarseFrequency)
+                    , text "Coarse frequency"
+                    ]
+                , div [ class "labeledknob-horizontal" ]
+                    [ Html.map FineFrequencyMsg (Knob.view 30 model.fineFrequency)
+                    , text "Fine frequency"
                     ]
                 ]
-            , div [ class "seqctrl" ]
-                [ div [ class "parambutton", onMouseDown (SetOctave (model.octave + 1)) ] [ text "⬆️" ]
-                , div [ class "parambutton", onMouseDown (SetOctave (model.octave - 1)) ] [ text "⬇️" ]
-                , text "Octave: "
-                , text (toString model.octave)
-                ]
+            ]
+        ]
+
+
+waveformSelector : String -> Html Msg
+waveformSelector currentWaveform =
+    div [ class "waveform-selector" ]
+        [ select [ class "wave-type-select", onInput SetWaveform, value currentWaveform ]
+            [ option [ value "sine" ] [ text "Sine" ]
+            , option [ value "square" ] [ text "Square" ]
+            , option [ value "sawtooth" ] [ text "Sawtooth" ]
+            , option [ value "triangle" ] [ text "Triangle" ]
             ]
         ]
 
@@ -60,32 +74,33 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         SetWaveform waveform ->
-            ( { model | waveform = waveform }, Cmd.none )
+            ( { model | waveform = waveform }, SoundEngineController.stepEngine (SoundEngineController.encode_oscillator_waveform waveform) )
 
-        FrequencyMsg knobMsg ->
+        CoarseFrequencyMsg knobMsg ->
             let
                 ( newKnob, maybeValue ) =
-                    Knob.update knobMsg model.frequency
+                    Knob.update knobMsg model.coarseFrequency
             in
-            ( { model | frequency = newKnob }
-            , Cmd.none
-              -- You might want to add a port command here
+            ( { model | coarseFrequency = newKnob }
+            , maybeValue |> Maybe.map SoundEngineController.encode_oscillator_coarse_frequency |> Maybe.map SoundEngineController.stepEngine |> Maybe.withDefault Cmd.none
             )
 
-        DetuneMsg knobMsg ->
+        FineFrequencyMsg knobMsg ->
             let
-                ( newKnob, maybeValue ) =
-                    Knob.update knobMsg model.detune
+                ( newKnob, _ ) =
+                    Knob.update knobMsg model.fineFrequency
             in
-            ( { model | detune = newKnob }
-            , Cmd.none
-              -- You might want to add a port command here
+            ( { model | fineFrequency = newKnob }
+            , SoundEngineController.stepEngine (SoundEngineController.encode_oscillator_fine_frequency newKnob.value)
             )
 
         SetOctave octave ->
-            ( { model | octave = octave }, Cmd.none )
+            ( { model | octave = octave }, SoundEngineController.stepEngine (SoundEngineController.encode_oscillator_octave octave) )
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    Sub.batch
+        [ Sub.map CoarseFrequencyMsg (Knob.subscriptions model.coarseFrequency)
+        , Sub.map FineFrequencyMsg (Knob.subscriptions model.fineFrequency)
+        ]

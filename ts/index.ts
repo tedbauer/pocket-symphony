@@ -16,6 +16,12 @@ type EngineState = {
     frequency: number,
     intensity: number,
     wave: OscillatorType,
+  },
+  oscillator: {
+    waveform: OscillatorType,
+    coarseFrequency: number,
+    fineFrequency: number,
+    octave: number,
   }
 }
 
@@ -28,14 +34,8 @@ export class AudioPlayer {
   private playing: boolean;
 
   private drumPatterns: Map<string, boolean[]>
-
   private intervalIds: any[];
-
-  private wave: any = "sine";
-
-  private octave: number;
   private state: EngineState;
-
   constructor(viewUpdateCallback: Function) {
     this.state = {
       delay: { time: 0.9, feedback: 0 },
@@ -43,13 +43,19 @@ export class AudioPlayer {
       envelope: {
         attack: 0,
         decay: 0.1,
-        sustain: 0.02,
-        release: 0.001
+        sustain: 0.4,
+        release: 0.2,
       },
       lfo: {
         frequency: 10,
         intensity: 9,
         wave: 'sine'
+      },
+      oscillator: {
+        waveform: 'sine',
+        coarseFrequency: 0,
+        fineFrequency: 0,
+        octave: 0,
       }
     };
 
@@ -57,9 +63,7 @@ export class AudioPlayer {
 
     this.currentChord = 0;
     this.playing = false;
-    this.bpm = 200;
-
-    this.octave = 0;
+    this.bpm = 300;
 
     this.drumPatterns = new Map([
       ["kick", Array(16).fill(false)],
@@ -72,7 +76,6 @@ export class AudioPlayer {
   }
 
   private playKick(currentChordNumber: number) {
-    console.log("playing kick at " + currentChordNumber);
     const kickGain = this.audioCtx!.createGain();
     kickGain.gain.setValueAtTime(1, this.audioCtx!.currentTime);
     kickGain.connect(this.audioCtx!.destination);
@@ -84,8 +87,8 @@ export class AudioPlayer {
     oscillator.connect(kickGain)
     oscillator.frequency.exponentialRampToValueAtTime(0.01, this.audioCtx!.currentTime + 0.5);
 
-    oscillator.start(currentChordNumber * this.bpm / 1000);
-    oscillator.stop((currentChordNumber * this.bpm / 1000) + 0.2);
+    oscillator.start(currentChordNumber * (60000 / this.bpm) / 1000);
+    oscillator.stop((currentChordNumber * (60000 / this.bpm) / 1000) + 0.2);
   }
 
   private playSnare(currentChordNumber: number) {
@@ -106,7 +109,7 @@ export class AudioPlayer {
 
     source.connect(snareGain);
     snareGain.connect(this.audioCtx!.destination);
-    source.start(currentChordNumber * this.bpm / 1000);
+    source.start(currentChordNumber * (60000 / this.bpm) / 1000);
   }
 
   private playHihat(currentChordNumber: number) {
@@ -127,7 +130,7 @@ export class AudioPlayer {
 
     source.connect(hihatGain);
     hihatGain.connect(this.audioCtx!.destination);
-    source.start(currentChordNumber * this.bpm / 1000);
+    source.start(currentChordNumber * (60000 / this.bpm) / 1000);
   }
 
   private invokeInterval(currentChordNumberStart: number) {
@@ -136,11 +139,11 @@ export class AudioPlayer {
 
     let currentChordNumber = currentChordNumberStart;
 
-    while (this.playing && currentChordNumber * this.bpm < (this.audioCtx!.currentTime * 1000) + lookahead) {
+    while (this.playing && currentChordNumber * (60000 / this.bpm) < (this.audioCtx!.currentTime * 1000) + lookahead) {
       let chord: number[] = this.state.melody[currentChordNumber % 8];
       chord.forEach((frequency) => {
         const gainNode = this.audioCtx!.createGain();
-        const startTime = currentChordNumber * this.bpm / 1000;
+        const startTime = currentChordNumber * (60000 / this.bpm) / 1000;
         gainNode.gain.setValueAtTime(0, startTime);
         gainNode.gain.linearRampToValueAtTime(0.8, startTime + this.state.envelope.attack);
         gainNode.gain.linearRampToValueAtTime(this.state.envelope.sustain * 0.8, startTime + this.state.envelope.attack + this.state.envelope.decay);
@@ -149,20 +152,27 @@ export class AudioPlayer {
         gainNode.connect(this.audioCtx!.destination);
 
         const oscillator = this.audioCtx!.createOscillator();
-        oscillator.type = this.wave;
-        oscillator.frequency.setValueAtTime(frequency * 2 ** this.octave, this.audioCtx!.currentTime);
+        oscillator.type = this.state.oscillator.waveform;
+        //oscillator.frequency.setValueAtTime(frequency * 2 ** this.state.oscillator.octave, this.audioCtx!.currentTime);
 
 
         if (this.state.delay.feedback > 0) {
-          const delayNode = this.audioCtx!.createDelay(1.0); // Maximum delay of 5 seconds
-          delayNode.delayTime.setValueAtTime(this.state.delay.time, this.audioCtx!.currentTime); // 300ms delay
+          const delayNode = this.audioCtx!.createDelay(1.0);
+          delayNode.delayTime.setValueAtTime(this.state.delay.time, this.audioCtx!.currentTime);
           const feedbackGain = this.audioCtx!.createGain();
-          feedbackGain.gain.setValueAtTime(this.state.delay.feedback, this.audioCtx!.currentTime); // 40% feedback
+          feedbackGain.gain.setValueAtTime(this.state.delay.feedback, this.audioCtx!.currentTime);
           delayNode.connect(feedbackGain);
           feedbackGain.connect(delayNode);
           gainNode.connect(delayNode);
           delayNode.connect(this.audioCtx!.destination);
         }
+
+        // Add coarse and fine frequencies to the oscillator frequency
+        const baseFrequency = frequency * 2 ** this.state.oscillator.octave;
+        const coarseAdjustment = this.state.oscillator.coarseFrequency;
+        const fineAdjustment = this.state.oscillator.fineFrequency / 100; // Assuming fine frequency is in cents
+        const adjustedFrequency = baseFrequency * (1 + coarseAdjustment + fineAdjustment);
+        oscillator.frequency.setValueAtTime(adjustedFrequency, this.audioCtx!.currentTime);
 
         oscillator.connect(gainNode);
 
@@ -177,9 +187,8 @@ export class AudioPlayer {
         lfo.connect(lfoGain);
         lfoGain.connect(oscillator.frequency);
 
-        oscillator.start(currentChordNumber * this.bpm / 1000);
-        oscillator.stop((currentChordNumber * this.bpm / 1000) + 0.2);
-        // oscillator.stop((this.currentChord * this.bpm / 1000) + 1);
+        oscillator.start(currentChordNumber * (60000 / this.bpm) / 1000);
+        oscillator.stop((currentChordNumber * (60000 / this.bpm) / 1000) + 0.2);
         lfo.start();
       })
 
@@ -221,8 +230,10 @@ export class AudioPlayer {
         this.audioCtx = new AudioContext();
       }
 
-      this.playing = true;
-      this.invokeInterval(this.currentChord);
+      if (!this.playing) {
+        this.playing = true;
+        this.invokeInterval(this.currentChord);
+      }
     } else if (audioCommand === "pause") {
       this.playing = false;
       this.clearIntervals();
@@ -274,6 +285,19 @@ export class AudioPlayer {
           case 'sustain': this.state.envelope.sustain = envelope.value; break;
         }
         break;
+      case 'oscillator':
+        const oscillator = JSON.parse(message);
+        console.log(oscillator);
+        switch (oscillator.param) {
+          case 'waveform': this.state.oscillator.waveform = oscillator.value as OscillatorType; break;
+          case 'coarseFrequency': {
+            console.log("coarseFrequency: " + oscillator.value);
+            this.state.oscillator.coarseFrequency = oscillator.value; break;
+          }
+          case 'fineFrequency': this.state.oscillator.fineFrequency = oscillator.value; break;
+          case 'octave': this.state.oscillator.octave = oscillator.value; break;
+        }
+        break;
       case 'lfo':
         const lfo = JSON.parse(message);
         console.log(message);
@@ -295,15 +319,7 @@ export class AudioPlayer {
     this.drumPatterns.get(drum)![column] = !this.drumPatterns.get(drum)![column];
   }
 
-  public updateWave(wave: string) {
-    this.wave = wave.toLowerCase();
-  }
-
   public updateBpm(bpm: number) {
     this.bpm = bpm;
-  }
-
-  public updateOctave(octave: number) {
-    this.octave = octave;
   }
 }

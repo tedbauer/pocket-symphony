@@ -21,7 +21,7 @@ type alias Model =
 
 init : Model
 init =
-    { bpm = Knob.init 200 150 300 1
+    { bpm = Knob.init 300 100 500 1
     , playing = False
     , activeStep = 0
     }
@@ -36,8 +36,20 @@ view model =
     div [ class "card" ]
         [ div
             [ class "controlbar" ]
-            [ div [ class "play", onClick Play ] [ text "▶️" ]
-            , div [ class "pause", onClick Pause ] [ text "⏸️" ]
+            [ div [ class "playback-controls" ]
+                [ div
+                    [ class "play"
+                    , onClick Play
+                    , Html.Attributes.attribute "data-playing" (toString model.playing)
+                    ]
+                    [ text "▶️" ]
+                , div
+                    [ class "pause"
+                    , onClick Pause
+                    , Html.Attributes.attribute "data-playing" (toString model.playing)
+                    ]
+                    [ text "⏸️" ]
+                ]
             , div
                 [ class "tempocontrol" ]
                 [ text "Tempo", Html.map BpmMessage (Knob.view 20 model.bpm) ]
@@ -101,18 +113,29 @@ update msg model =
             let
                 ( newKnob, maybeValue ) =
                     Knob.update knobMsg model.bpm
+
+                bpmCmd =
+                    maybeValue
+                        |> Maybe.map round
+                        |> Maybe.map
+                            (\bpm ->
+                                Cmd.batch
+                                    [ SoundEngineController.stepEngine (SoundEngineController.encode_bpm_message bpm)
+                                    , SoundEngineController.stepEngine (SoundEngineController.encode_audio_command_message "pause")
+                                    ]
+                            )
+                        |> Maybe.withDefault Cmd.none
             in
-            ( { model | bpm = newKnob }
-            , maybeValue
-                |> Maybe.map round
-                |> Maybe.map (SoundEngineController.stepEngine << SoundEngineController.encode_bpm_message)
-                |> Maybe.withDefault Cmd.none
-            )
+            ( { model | bpm = newKnob, playing = False }, bpmCmd )
 
         Play ->
-            ( { model | playing = True }
-            , SoundEngineController.stepEngine (SoundEngineController.encode_audio_command_message "play")
-            )
+            if not model.playing then
+                ( { model | playing = True }
+                , SoundEngineController.stepEngine (SoundEngineController.encode_audio_command_message "play")
+                )
+
+            else
+                ( model, Cmd.none )
 
         Pause ->
             ( { model | playing = False }
