@@ -225,7 +225,7 @@ export class AudioPlayer {
         this.audioCtx = new AudioContext();
       }
 
-      if (this.audioCtx !== null) {
+      if (this.audioCtx !== undefined) {
         this.audioCtx!.close();
         this.audioCtx = new AudioContext();
       }
@@ -238,7 +238,7 @@ export class AudioPlayer {
       this.playing = false;
       this.clearIntervals();
 
-      if (this.audioCtx !== null) {
+      if (this.audioCtx !== undefined) {
         this.audioCtx!.close();
         this.audioCtx! = new AudioContext();
       }
@@ -247,7 +247,7 @@ export class AudioPlayer {
       this.clearIntervals();
       this.currentChord = 0;
 
-      if (this.audioCtx !== null) {
+      if (this.audioCtx !== undefined) {
         this.audioCtx!.close();
         this.audioCtx! = new AudioContext();
       }
