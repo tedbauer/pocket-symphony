@@ -1,0 +1,26 @@
+name: Build and Push
+
+on:
+  push:
+    branches: [release]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: justgook/setup-elm@1.3.0
+        with:
+          elm-version: '0.19.1'
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - run: npm install --save-dev ts-loader
+      - run: make dev
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: false
+      - run: git add index.html
+      - run: git commit -m "Update generated files"
+      - run: git push origin main:release
