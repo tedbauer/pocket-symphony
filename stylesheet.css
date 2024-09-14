@@ -421,3 +421,7 @@ body.knob-dragging * {
 .wave-type-select {
     font-family: 'Merriweather', serif;
 }
+
+a {
+    text-decoration: none;
+}

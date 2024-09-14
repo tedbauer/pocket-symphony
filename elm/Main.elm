@@ -68,7 +68,11 @@ view model =
                 , Html.map DrumMachineMsg (DrumMachine.view model.drumMachine)
                 ]
             , div [ class "cardrow" ]
-                [ div [ class "cardnofill" ] [ div [ class "parambutton" ] [ a [ href "https://github.com/tedbauer/sequencer/issues/new/choose" ] [ text "Report an issue" ] ] ] ]
+                [ div [ class "cardnofill" ]
+                    [ div [ class "parambutton" ] [ a [ href "https://github.com/tedbauer/sequencer/issues/new/choose" ] [ text "Report an issue" ] ]
+                    ]
+                , div [ class "cardnofill" ] [ div [ class "parambutton" ] [ a [ href "https://polarbeardomestication.net" ] [ text "polarbeardomestication.net" ] ] ]
+                ]
             ]
         ]
 
